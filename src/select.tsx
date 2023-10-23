@@ -1,6 +1,7 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { Portal } from '@radix-ui/react-portal';
 import { AnimatePresence, motion } from 'framer-motion';
+import List, { ListRef } from 'rc-virtual-list';
 import React, {
   ReactElement,
   ReactNode,
@@ -11,7 +12,6 @@ import React, {
 import CloseIcon from './close-icon';
 import './css/index.scss';
 import DropdownIcon from './dropdown-icon';
-import ListRenderer from './list-renderer';
 import type { IOption } from './option';
 import OptionRenderer from './option-renderer';
 import Tag from './tag';
@@ -47,6 +47,7 @@ const Select = ({
 }: ISelect) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<ListRef>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [inputBounding, setInputBounding] = useState({
@@ -64,6 +65,8 @@ const Select = ({
   const [selectedOption, setSelectedOption] = useState<Array<string>>([]);
 
   const [inputText, setInputText] = useState('');
+
+  const [hoveredElement, setHoveredElement] = useState<Element>();
 
   useEffect(() => {
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
@@ -152,17 +155,40 @@ const Select = ({
         }}
         onBlur={(e) => {
           if (!portalRef?.current?.contains(e.relatedTarget) && show) {
-            setShow(false);
+            // setShow(false);
           }
         }}
-        onKeyDown={() => {
-          const optionItem = dialogRef.current?.querySelector(
-            '.option-item[focused]'
-          );
-          if (optionItem) {
-            optionItem.removeAttribute('focused');
-            if (optionItem.nextElementSibling) {
-              optionItem.nextElementSibling.setAttribute('focused', 'true');
+        onKeyDown={(e) => {
+          const { key } = e;
+          console.log(e);
+
+          if (['ArrowUp', 'ArrowDown'].includes(key)) {
+            const optionItem = dialogRef.current?.querySelector(
+              '.option-item[focused]'
+            );
+            if (optionItem) {
+              if (key === 'ArrowDown') {
+                if (optionItem.nextElementSibling) {
+                  optionItem.removeAttribute('focused');
+                  optionItem.nextElementSibling.setAttribute('focused', 'true');
+                  setHoveredElement(optionItem.nextElementSibling);
+                  optionItem.nextElementSibling.scrollIntoView({
+                    block: 'end',
+                  });
+                }
+              } else if (key === 'ArrowUp') {
+                if (optionItem.previousElementSibling) {
+                  optionItem.removeAttribute('focused');
+                  optionItem.previousElementSibling.setAttribute(
+                    'focused',
+                    'true'
+                  );
+                  optionItem.previousElementSibling.scrollIntoView({
+                    block: 'end',
+                  });
+                  setHoveredElement(optionItem.previousElementSibling);
+                }
+              }
             }
           }
         }}
@@ -281,11 +307,15 @@ const Select = ({
                   '0 6px 16px 0 rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05)',
               }}
             >
-              <ListRenderer
+              <List
                 data={customOptions}
                 itemKey="key"
                 fullHeight={false}
                 virtual={virtual}
+                height={200}
+                itemHeight={30}
+                tabIndex={-1}
+                ref={listRef}
               >
                 {({ children: child, label, value, className }) => {
                   const isActive = multiple
@@ -293,11 +323,8 @@ const Select = ({
                     : value === selectedOption[0];
                   return (
                     <OptionRenderer
-                      className={
-                        typeof className === 'string'
-                          ? className
-                          : className?.(isActive)
-                      }
+                      hoveredElement={hoveredElement}
+                      className={className}
                       active={isActive}
                       onClick={() => {
                         inputRef.current?.focus();
@@ -328,7 +355,7 @@ const Select = ({
                     </OptionRenderer>
                   );
                 }}
-              </ListRenderer>
+              </List>
               {filteredOptions.length === 0 &&
                 (noOptionMessage || (
                   <div className="byte-p-2 byte-self-center byte-text-center byte-flex byte-items-center byte-justify-center">

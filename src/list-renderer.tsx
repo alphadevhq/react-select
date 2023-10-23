@@ -1,5 +1,5 @@
-import List from 'rc-virtual-list';
-import { ReactNode } from 'react';
+import List, { ListRef } from 'rc-virtual-list';
+import { ReactNode, Ref, forwardRef } from 'react';
 
 interface IListRenderer<T> {
   data: Array<T>;
@@ -8,26 +8,32 @@ interface IListRenderer<T> {
   virtual?: boolean;
   children: (option: T) => ReactNode;
 }
-const ListRenderer = <T,>({
-  data,
-  itemKey,
-  fullHeight = true,
-  virtual = true,
-  children,
-}: IListRenderer<T>) => {
-  return (
-    <List
-      tabIndex={-1}
-      data={data}
-      height={200}
-      itemHeight={30}
-      itemKey={itemKey}
-      fullHeight={fullHeight}
-      virtual={virtual}
-    >
-      {children}
-    </List>
-  );
-};
+const ListRenderer = forwardRef(
+  <T,>(
+    {
+      data,
+      itemKey,
+      fullHeight = true,
+      virtual = true,
+      children,
+    }: IListRenderer<T>,
+    ref: Ref<ListRef>
+  ) => {
+    return (
+      <List
+        tabIndex={-1}
+        data={data}
+        height={200}
+        itemHeight={30}
+        itemKey={itemKey}
+        fullHeight={fullHeight}
+        virtual={virtual}
+        ref={ref}
+      >
+        {children}
+      </List>
+    );
+  }
+);
 
 export default ListRenderer;

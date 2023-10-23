@@ -34,9 +34,11 @@ root.render(
             key={opt.value}
             label={opt.label}
             value={opt.value}
-            className={(isActive) => {
-              return isActive ? 'byte-bg-red-600' : '';
-            }}
+            className={() => ({
+              active: '!byte-bg-red-300',
+              focus: '!byte-bg-green-300',
+              default: 'byte-bg-white',
+            })}
           >
             <div>{opt.label}</div>
           </Option>

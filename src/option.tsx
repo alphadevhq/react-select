@@ -7,7 +7,15 @@ export interface IOption {
   value: string;
   extra?: any;
   children: ReactNode;
-  className?: string | ((isActive: boolean) => string);
+  className?:
+    | string
+    | (({
+        isActive,
+        isFocused,
+      }: {
+        isActive?: boolean;
+        isFocused?: boolean;
+      }) => { active?: string; focus?: string; default?: string });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
