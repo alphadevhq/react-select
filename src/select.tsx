@@ -1,8 +1,9 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { Portal } from '@radix-ui/react-portal';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, AnimationProps, motion } from 'framer-motion';
 import List, { ListRef } from 'rc-virtual-list';
-import React, {
+import {
+  KeyboardEvent,
   ReactElement,
   ReactNode,
   useEffect,
@@ -12,21 +13,54 @@ import React, {
 import CloseIcon from './close-icon';
 import './css/index.scss';
 import DropdownIcon from './dropdown-icon';
-import type { IOption } from './option';
-import OptionRenderer from './option-renderer';
+import type { IGroupOption, IOption } from './option';
+import OptionRenderer, { IOptionItem } from './option-renderer';
+import SemiCircleIcon from './semi-circle-icon';
 import Tag from './tag';
+import type { ITagRender } from './tag-render';
 import { cn } from './utils';
 
-interface ISelect {
-  options?: Array<any>;
+type ISelectedOption<T extends Record<string, any>> =
+  | {
+      label: string;
+      value: string;
+    }
+  | T;
+
+type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>
+  ? U extends true
+    ? T['options'][]
+    : T['options'][number]
+  : U extends true
+  ? IOption[] & T
+  : ExtractArrayType<IOption & T>;
+
+type ExtractArrayType<T> = T extends (infer U)[] ? U : never;
+
+interface ISelect<T, U> {
+  options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
   virtual?: boolean;
   noOptionMessage?: ReactNode;
-  multiple?: boolean;
+  multiple?: U;
   searchable?: boolean;
-  // creatable?: boolean;
+  creatable?: ReactNode;
   suffix?: ReactNode;
   showclear?: boolean;
-  children?: ReactElement<IOption> | Array<ReactElement<IOption>> | null;
+  tagRender?: ReactElement<ITagRender>;
+  menuItemRender?: ({
+    active,
+    focused,
+    innerProps,
+    forwardedRef,
+  }: IOptionItem) => ReactNode;
+  portalClass?: string;
+  menuClass?: string;
+  creatableClass?:
+    | string
+    | (() => { active: string; focus: string; default: string });
+  animation?: null | AnimationProps;
+  onChange?: (value: ExtractOptionType<T, U>) => void;
+  value: ExtractOptionType<T, U> | undefined;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -34,17 +68,23 @@ const getPosition = (target: HTMLDivElement) => {
   return { left, top, width, height };
 };
 
-const Select = ({
-  options = [],
-  virtual = true,
+const Select = <T, U extends boolean | undefined = undefined>({
+  options,
   multiple = false,
+  virtual = true,
   searchable = false,
   noOptionMessage,
-  // creatable = false,
+  creatable = false,
   suffix = undefined,
   showclear = true,
-  children,
-}: ISelect) => {
+  portalClass,
+  menuClass,
+  tagRender,
+  animation,
+  onChange,
+  value,
+  menuItemRender,
+}: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<ListRef>(null);
@@ -58,15 +98,48 @@ const Select = ({
   });
   const [show, setShow] = useState(false);
   const [offsetVertical] = useState(5);
+  const [loading, setLoading] = useState(false);
 
-  const [filteredOptions, _setFilteredOptions] = useState(options);
-  const [customOptions, setCustomOptions] = useState<IOption[]>([]);
+  const [filteredOptions, setFilteredOptions] = useState<
+    (IOption & { group?: string | null; groupMode?: boolean })[]
+  >([]);
 
-  const [selectedOption, setSelectedOption] = useState<Array<string>>([]);
+  const [flatOptions, setFlatOptions] = useState<typeof filteredOptions>([]);
+
+  const [selectedOption, setSelectedOption] = useState<
+    ISelectedOption<IOption>[]
+  >([]);
 
   const [inputText, setInputText] = useState('');
 
   const [hoveredElement, setHoveredElement] = useState<Element>();
+
+  const [enterPressed, setEnterPressed] = useState(false);
+  const [focusedElement, setFocusedElement] = useState('');
+
+  useEffect(() => {
+    if (value && flatOptions.length > 0) {
+      let filteredArray = [];
+      if (Array.isArray(value) && multiple) {
+        filteredArray = flatOptions.filter((fo) =>
+          value.find((v) => v?.value === fo.value)
+        );
+
+        setSelectedOption(filteredArray);
+      } else {
+        const v = value;
+        // @ts-ignore
+        const f = flatOptions.find((fo) => fo.value === v?.value);
+        if (f) {
+          filteredArray = [f];
+          if (filteredArray.length > 0) {
+            setSelectedOption(filteredArray);
+          }
+        }
+      }
+    }
+    console.log(value);
+  }, [flatOptions, value]);
 
   useEffect(() => {
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
@@ -82,11 +155,28 @@ const Select = ({
     };
   }, []);
 
+  useEffect(() => {
+    const optionItem = dialogRef.current?.querySelector(
+      '.option-item-container[focused]'
+    );
+    if (optionItem) {
+      setHoveredElement(optionItem);
+    }
+  }, [focusedElement]);
+
   const makeItemActive = () => {
     if (portalRef.current) {
-      portalRef.current
-        .querySelector('.option-item')
-        ?.setAttribute('focused', 'true');
+      const hoveredEl = portalRef.current.querySelectorAll(
+        '.option-item-container'
+      );
+      hoveredEl.forEach((hl, index) => {
+        if (index === 0) {
+          hl.setAttribute('focused', 'true');
+          setHoveredElement(hl);
+        } else {
+          hl.removeAttribute('focused');
+        }
+      });
     }
   };
 
@@ -100,17 +190,41 @@ const Select = ({
     }
   }, [show]);
 
-  // useEffect(() => {
-  //   setFilteredOptions(options);
-  // }, [options]);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const opt = await options?.();
+      if (opt && opt.length > 0) {
+        if ('options' in opt[0]) {
+          const filtered = (opt as IGroupOption<IOption[] | T[]>[]).flatMap(
+            (opt) =>
+              opt.options?.map((optt, index) => ({
+                ...optt,
+                group: index === 0 ? opt.label : null,
+                groupMode: true,
+              }))
+          );
 
-  // useEffect(() => {
-  //   const filtered = options.filter((opt) => opt.label.includes(inputText));
-  //   if (creatable && filtered.length === 0) {
-  //     filtered.push({ label: inputText, value: inputText });
-  //   }
-  //   setFilteredOptions(filtered);
-  // }, [inputText, options, creatable]);
+          setFlatOptions(filtered as any);
+        } else {
+          setFlatOptions(opt as IOption[]);
+        }
+      }
+      setLoading(false);
+    })();
+  }, [options]);
+
+  useEffect(() => {
+    const filtered = flatOptions.filter((fot) => fot.label.includes(inputText));
+    if (filtered.length === 0) {
+      filtered.push({ label: inputText, value: inputText });
+    }
+    setFilteredOptions(filtered);
+  }, [inputText, flatOptions, creatable]);
+
+  useEffect(() => {
+    makeItemActive();
+  }, [filteredOptions]);
 
   useEffect(() => {
     const holder = portalRef.current?.querySelector(
@@ -123,27 +237,36 @@ const Select = ({
   }, [portalRef.current]);
 
   const removeTag = (tag: string) => {
-    setSelectedOption(selectedOption.filter((so) => so !== tag));
+    setSelectedOption(selectedOption.filter((so) => so.value !== tag));
+    inputRef.current?.focus();
   };
 
   useEffect(() => {
-    const x = React.Children.map(children, (child) => ({
-      ...child?.props,
-      key: child?.props.value,
-    }));
-    setCustomOptions(x as any);
-  }, [children]);
+    onChange?.((multiple ? selectedOption : selectedOption?.[0]) as any);
+  }, [selectedOption]);
+
+  // useEffect(() => {
+  //   if (remoteFetch && !options) {
+  //     (async () => {
+  //       setLoading(true);
+  //       const res = await remoteFetch();
+  //       setFlatOptions(res as any);
+  //       setLoading(false);
+  //     })();
+  //   }
+  // }, [remoteFetch]);
 
   return (
     <>
       <div
-        tabIndex={searchable ? -1 : 0}
+        tabIndex={searchable || creatable ? -1 : 0}
         ref={selectContainerRef}
         className={cn(
-          'byte-relative byte-flex byte-flex-row byte-items-center byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400',
+          'byte-relative byte-flex byte-flex-row',
+          'byte-items-center byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400',
           {
             'byte-cursor-text focus-within:byte-ring-1 focus-within:byte-ring-blue-400':
-              searchable,
+              searchable || !!creatable,
           }
         )}
         onClick={() => {
@@ -154,17 +277,24 @@ const Select = ({
           );
         }}
         onBlur={(e) => {
-          if (!portalRef?.current?.contains(e.relatedTarget) && show) {
-            // setShow(false);
+          if (
+            !portalRef?.current?.contains(e.relatedTarget) &&
+            !selectContainerRef.current?.contains(e.relatedTarget) &&
+            show
+          ) {
+            setShow(false);
           }
         }}
         onKeyDown={(e) => {
           const { key } = e;
-          console.log(e);
 
           if (['ArrowUp', 'ArrowDown'].includes(key)) {
+            if (!show) {
+              setShow(true);
+            }
+
             const optionItem = dialogRef.current?.querySelector(
-              '.option-item[focused]'
+              '.option-item-container[focused]'
             );
             if (optionItem) {
               if (key === 'ArrowDown') {
@@ -191,57 +321,85 @@ const Select = ({
               }
             }
           }
+
+          if (key === 'Enter' && show) {
+            setEnterPressed((prev) => !prev);
+          }
+
+          if (key === 'Escape') {
+            setShow(false);
+          }
         }}
       >
-        <div className="byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center byte-cursor-default">
+        <div
+          className={cn(
+            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center byte-cursor-default byte-transition-all',
+            {
+              'byte-flex-1': !multiple,
+              'byte-cursor-text': (searchable || !!creatable) && !multiple,
+            }
+          )}
+        >
           {multiple &&
-            selectedOption.map((so) => (
-              <Tag
-                key={so}
-                value={so}
-                onClose={(value) => {
-                  removeTag(value);
-                  inputRef.current?.focus();
-                }}
-              >
-                {so}
-              </Tag>
-            ))}
+            selectedOption.map(
+              (so) =>
+                (tagRender &&
+                  tagRender?.props?.children?.({
+                    remove: removeTag,
+                    value: so.value,
+                    label: so.label,
+                  })) || (
+                  <Tag
+                    key={so.value}
+                    value={so.value}
+                    onClose={(value) => {
+                      removeTag(value);
+                    }}
+                  >
+                    {so.label}
+                  </Tag>
+                )
+            )}
           {!multiple && selectedOption.length > 0 && (
             <div
               className={cn({
-                'byte-text-gray-400': show,
+                'byte-text-gray-400 byte-transition-all': show,
                 hidden: show && !!inputText,
               })}
             >
-              {selectedOption[0]}
+              {selectedOption[0].label}
             </div>
           )}
         </div>
-        {searchable && (
+        {(searchable || creatable) && (
           <input
+            autoComplete="off"
             ref={inputRef}
-            onKeyDown={(e) => {
+            onKeyDown={(e: KeyboardEvent) => {
               const key = e.key || `${e.keyCode}`;
 
               if (
                 !inputText &&
-                e.key === 'Backspace' &&
+                key === 'Backspace' &&
                 multiple &&
-                searchable
+                (searchable || creatable)
               ) {
                 setSelectedOption((prev) => prev.slice(0, prev.length - 1));
               }
-              if (key === 'Escape') {
-                setShow(false);
+
+              if (e.code === 'Space' && e.ctrlKey) {
+                setShow(true);
               }
-              if (!show && key.length < 2) {
+            }}
+            onKeyUp={() => {
+              const reg = /^[0-9a-zA-Z@]+$/;
+              if (!show && inputRef.current?.value.match(reg)) {
                 setShow(true);
               }
             }}
             className={cn('byte-flex-1 byte-outline-none', {
               'byte-absolute byte-bg-transparent byte-ml-0.5':
-                !multiple && searchable,
+                !multiple && (searchable || !!creatable),
             })}
             value={inputText}
             onChange={({ target }) => {
@@ -254,6 +412,11 @@ const Select = ({
             tabIndex={-1}
             className="byte-text-stone-400 byte-mx-1.5 byte-flex byte-flex-row byte-items-center gap-2 min-h-[24px]"
           >
+            {loading && (
+              <div className="byte-animate-spin">
+                <SemiCircleIcon size={16} />
+              </div>
+            )}
             {showclear && selectedOption.length > 0 && (
               <button
                 onClick={(e) => {
@@ -278,7 +441,10 @@ const Select = ({
           <Portal
             ref={portalRef}
             tabIndex={-1}
-            className="react-select-portal byte-absolute byte-z-[9999]"
+            className={cn(
+              'react-select-portal',
+              portalClass || 'byte-absolute byte-z-[9999]'
+            )}
             onClick={() => {
               if (!multiple) {
                 setShow(false);
@@ -295,21 +461,24 @@ const Select = ({
           >
             <motion.div
               tabIndex={-1}
-              initial={{ opacity: 0, translateY: -5 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              exit={{ opacity: 0, translateY: -5 }}
-              ref={dialogRef}
               className={cn(
-                'react-select-dialog byte-flex byte-flex-col byte-bg-white byte-rounded-lg byte-p-1 byte-z-50'
+                'react-select-dialog byte-flex byte-flex-col ',
+                menuClass ||
+                  'byte-bg-white byte-rounded-lg byte-p-1 byte-z-50 byte-shadow-menu'
               )}
-              style={{
-                boxShadow:
-                  '0 6px 16px 0 rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05)',
-              }}
+              {...(animation ||
+                (animation === null
+                  ? {}
+                  : {
+                      initial: { opacity: 0, translateY: -5 },
+                      animate: { opacity: 1, translateY: 0 },
+                      exit: { opacity: 0, translateY: -5 },
+                    }))}
+              ref={dialogRef}
             >
               <List
-                data={customOptions}
-                itemKey="key"
+                data={filteredOptions}
+                itemKey="value"
                 fullHeight={false}
                 virtual={virtual}
                 height={200}
@@ -317,42 +486,57 @@ const Select = ({
                 tabIndex={-1}
                 ref={listRef}
               >
-                {({ children: child, label, value, className }) => {
+                {(data) => {
+                  const { label, value, render, group, groupMode } = data;
+                  const selectValue = data;
+                  delete selectValue.group;
+                  delete selectValue.groupMode;
+                  delete selectValue.render;
+
+                  const findElement = selectedOption.find(
+                    (so) => so.value === value
+                  );
                   const isActive = multiple
-                    ? selectedOption.includes(value)
-                    : value === selectedOption[0];
+                    ? !!findElement
+                    : value === selectedOption[0]?.value;
                   return (
                     <OptionRenderer
+                      groupMode={!!groupMode}
+                      itemRender={menuItemRender}
+                      group={group}
+                      onFocusChanges={() => setFocusedElement(value)}
+                      enterPressed={enterPressed}
                       hoveredElement={hoveredElement}
-                      className={className}
                       active={isActive}
                       onClick={() => {
                         inputRef.current?.focus();
                         if (!multiple) {
-                          setSelectedOption([value]);
-                        } else if (selectedOption.includes(value)) {
+                          setSelectedOption([selectValue]);
+                          setShow(false);
+                        } else if (findElement) {
                           setSelectedOption(
-                            selectedOption.filter((v) => v !== value)
+                            selectedOption.filter((v) => v.value !== value)
                           );
                         } else {
-                          setSelectedOption((prev) => [...prev, value]);
+                          setSelectedOption((prev) => [...prev, selectValue]);
                         }
                         setInputText('');
-                        if (!searchable) {
+                        if (!(searchable || creatable)) {
                           selectContainerRef.current?.focus();
                         }
                         inputRef.current?.focus();
                       }}
                       onFocus={(e) => {
                         e.preventDefault();
-                        if (!searchable) {
+                        if (!(searchable || creatable)) {
                           selectContainerRef.current?.focus();
                         }
                         inputRef.current?.focus();
                       }}
-                    >
-                      {child || label}
-                    </OptionRenderer>
+                      render={render || label}
+                      label={label}
+                      value={value}
+                    />
                   );
                 }}
               </List>

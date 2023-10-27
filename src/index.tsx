@@ -1,12 +1,39 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import Option from './option';
 import './scss/build.scss';
 import Select from './select';
+import { cn } from './utils';
 
-const options = [
-  { label: 'hello', value: 'hi' },
-  { label: 'apple', value: 'apple' },
+const _options = [
+  {
+    label: 'hello',
+    value: 'hi',
+    extra: { a: 'a' },
+    render: ({ active, focused }) => (
+      <div
+        className={cn({
+          'byte-bg-red-200': active,
+          'byte-bg-green-200': focused,
+        })}
+      >
+        dog
+      </div>
+    ),
+  },
+  {
+    label: 'apple',
+    value: 'apple',
+    render: ({ active, focused }) => (
+      <div
+        className={cn({
+          'byte-bg-red-200': active,
+          'byte-bg-green-200': focused,
+        })}
+      >
+        dog
+      </div>
+    ),
+  },
   { label: 'ball', value: 'ball' },
   { label: 'c', value: 'd' },
   { label: 'd', value: 'e' },
@@ -22,28 +49,84 @@ const options = [
   { label: 'hsdf', value: 'isfd5' },
 ];
 
+const _groupOptions = [
+  {
+    label: 'Group 1',
+    options: [
+      { label: 'ball', value: 'ball', extra: 'h' },
+      { label: 'c', value: 'd' },
+    ],
+  },
+  {
+    label: 'Group 2',
+    options: [
+      { label: 'd', value: 'e' },
+      { label: 'f', value: 'g' },
+    ],
+  },
+];
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
+export function mapper<A, B>(
+  array: A[],
+  transform: (value: A, index: number) => B
+): B[] {
+  let _;
+  return array.map(transform);
+}
+
+const _f = async () => {
+  const x = await (
+    await fetch('https://jsonplaceholder.typicode.com/todos')
+  ).json();
+  const k = mapper(x, (d: any) => ({
+    label: `${d.title}`,
+    value: `${d.id}`,
+    extra: { a: 'h' },
+  }));
+  return k;
+};
+
+const _v = [
+  {
+    label: 'ball',
+    value: 'ball',
+    extra: {
+      a: 'h',
+      b: 'c',
+    },
+    render: ({ active, focused }) => (
+      <div
+        className={cn({
+          'byte-bg-red-200': active,
+          'byte-bg-green-200': focused,
+        })}
+      >
+        dog
+      </div>
+    ),
+  },
+  {
+    label: 'c',
+    value: 'd',
+    extra: {
+      a: 'h',
+    },
+    render: () => <div>hi</div>,
+  },
+];
 root.render(
-  <React.StrictMode>
-    <div className="byte-p-3">
-      <Select multiple searchable>
-        {options.map((opt) => (
-          <Option
-            key={opt.value}
-            label={opt.label}
-            value={opt.value}
-            className={() => ({
-              active: '!byte-bg-red-300',
-              focus: '!byte-bg-green-300',
-              default: 'byte-bg-white',
-            })}
-          >
-            <div>{opt.label}</div>
-          </Option>
-        ))}
-      </Select>
-    </div>
-  </React.StrictMode>
+  <div className="byte-p-3">
+    <Select
+      value={_v}
+      multiple
+      searchable
+      onChange={(x) => {
+        console.log(x);
+      }}
+      options={async () => _options}
+    />
+  </div>
 );

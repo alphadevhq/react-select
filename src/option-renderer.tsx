@@ -9,32 +9,58 @@ import {
 } from 'react';
 import { cn } from './utils';
 
+export type IOptionRender =
+  | string
+  | (({ active, focused }: { active: boolean; focused: boolean }) => ReactNode);
+export type IOptionItem = {
+  active?: boolean;
+  focused?: boolean;
+  label: string;
+  value: string;
+  render: IOptionRender;
+  forwardedRef: any;
+  innerProps?: {
+    group?: string | null;
+    onClick: () => void;
+    onMouseMove: () => void;
+    onFocus: (e: FocusEvent) => void;
+  };
+};
 interface IOptionRenderer {
-  children?: ReactNode;
+  render: IOptionRender;
   onClick: () => void;
   onFocus: (e: FocusEvent) => void;
   active: boolean;
-  className?:
-    | string
-    | (({
-        isActive,
-        isFocused,
-      }: {
-        isActive?: boolean;
-        isFocused?: boolean;
-      }) => { active?: string; focus?: string; default?: string });
   hoveredElement?: Element;
+  enterPressed: boolean;
+  onFocusChanges: () => void;
+  group?: string | null;
+  label: string;
+  value: string;
+  groupMode: boolean;
+  itemRender?: ({
+    active,
+    focused,
+    innerProps,
+    forwardedRef,
+  }: IOptionItem) => ReactNode;
 }
 
 const OptionRenderer = forwardRef(
   (
     {
-      children,
+      label,
+      value,
+      render,
       active,
       onClick,
       onFocus,
-      className,
       hoveredElement,
+      enterPressed,
+      onFocusChanges,
+      group,
+      groupMode,
+      itemRender: ItemRender,
     }: IOptionRenderer,
     ref: any
   ) => {
@@ -43,73 +69,103 @@ const OptionRenderer = forwardRef(
     const [isFocused, setIsFocused] = useState(false);
 
     const handleFocus = () => {
-      if (
-        typeof className !== 'string' &&
-        className?.({ isActive: active, isFocused })?.focus !== undefined
-      ) {
-        const focusClass =
-          className?.({ isActive: active, isFocused })?.focus?.split(' ') || '';
-        console.log(focusClass);
+      const siblings = wrapperRef.current?.parentNode?.querySelectorAll(
+        '.option-item-container'
+      );
 
-        const siblings =
-          wrapperRef.current?.parentNode?.querySelectorAll('.option-item');
+      if (typeof render !== 'string') {
         siblings?.forEach((sibling) => {
           sibling.removeAttribute('focused');
-          sibling.classList.remove(...focusClass);
         });
-        wrapperRef.current?.classList.add(...focusClass);
+      } else {
+        siblings?.forEach((sibling) => {
+          sibling.removeAttribute('focused');
+          sibling
+            ?.querySelector('.option-item')
+            ?.classList.remove('byte-bg-gray-400/10');
+        });
+        wrapperRef.current
+          ?.querySelector('.option-item')
+          ?.classList.add('byte-bg-gray-400/10');
       }
 
       wrapperRef.current?.setAttribute('focused', 'true');
+      onFocusChanges();
     };
 
     useEffect(() => {
       setIsFocused(!!wrapperRef.current?.hasAttribute('focused'));
 
-      if (
-        typeof className !== 'string' &&
-        className?.({ isActive: active, isFocused })?.focus !== undefined
-      ) {
-        const focusClass =
-          className?.({ isActive: active, isFocused })?.focus?.split(' ') || '';
+      if (typeof render === 'string') {
         if (wrapperRef.current?.hasAttribute('focused')) {
-          wrapperRef.current?.classList.add(...focusClass);
+          wrapperRef.current
+            ?.querySelector('.option-item')
+            ?.classList.add('byte-bg-gray-400/10');
         } else {
-          wrapperRef.current?.classList.remove(...focusClass);
+          wrapperRef.current
+            ?.querySelector('.option-item')
+            ?.classList.remove('byte-bg-gray-400/10');
         }
       }
-
-      // handleFocus();
     }, [hoveredElement]);
 
+    useEffect(() => {
+      if (isFocused) {
+        onClick();
+      }
+    }, [enterPressed]);
+
     return (
-      <div
-        tabIndex={-1}
-        ref={(r) => {
-          ref(r);
-          wrapperRef.current = r;
-        }}
-        className={cn(
-          'option-item',
-          className !== undefined || className !== null
-            ? typeof className === 'string'
-              ? className
-              : `${className?.({ isActive: active, isFocused }).default} ${
-                  active && className?.({ isActive: active, isFocused }).active
-                }`
-            : {
-                'byte-flex byte-flex-row byte-items-center byte-select-option byte-cursor-pointer byte-py-2 byte-rounded-lg byte-px-2 byte-border-t byte-border-y-white':
-                  true,
-                'byte-bg-sky-100': active,
-                'byte-outline-none': !active,
-                'byte-bg-gray-400/10': isFocused && !active,
-              }
+      <div className="option-item-container" ref={wrapperRef}>
+        {group && (
+          <div className="byte-text-xs byte-text-black/50 byte-py-2 byte-px-2">
+            {group}
+          </div>
         )}
-        onClick={onClick}
-        onFocus={onFocus}
-        onMouseMove={handleFocus}
-      >
-        {children}
+        {!ItemRender && (
+          <div
+            tabIndex={-1}
+            ref={ref}
+            className={cn(
+              'option-item',
+              typeof render === 'string'
+                ? {
+                    'byte-flex byte-flex-row byte-items-center byte-select-option byte-cursor-pointer byte-py-2 byte-rounded-lg byte-border-t byte-border-y-white':
+                      true,
+                    'byte-bg-sky-100 byte-font-bold': active,
+                    'byte-outline-none': !active,
+                    'byte-pr-2 byte-pl-5': groupMode,
+                    'byte-px-2': !groupMode,
+                  }
+                : ''
+            )}
+            onClick={onClick}
+            onFocus={onFocus}
+            onMouseMove={handleFocus}
+          >
+            {typeof render === 'string'
+              ? render
+              : render?.({ active, focused: isFocused })}
+          </div>
+        )}
+        {ItemRender && (
+          <ItemRender
+            {...{
+              forwardedRef: ref,
+              render,
+              active,
+              label,
+              value,
+              focused: isFocused,
+              innerProps: {
+                onClick,
+                onMouseMove: handleFocus,
+                group,
+                onFocus,
+              },
+            }}
+          />
+        )}
       </div>
     );
   }
