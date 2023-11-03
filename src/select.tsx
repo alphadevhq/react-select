@@ -37,7 +37,7 @@ type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>
 
 type ExtractArrayType<T> = T extends (infer U)[] ? U : never;
 
-interface ISelect<T, U> {
+export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
   virtual?: boolean;
   noOptionMessage?: ReactNode;
@@ -53,6 +53,7 @@ interface ISelect<T, U> {
     innerProps,
     forwardedRef,
   }: IOptionItem) => ReactNode;
+  className?: string;
   portalClass?: string;
   menuClass?: string;
   creatableClass?:
@@ -84,6 +85,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   onChange,
   value,
   menuItemRender,
+  className,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -116,6 +118,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   const [enterPressed, setEnterPressed] = useState(false);
   const [focusedElement, setFocusedElement] = useState('');
+
+  const hiddenTextRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (value && flatOptions.length > 0) {
@@ -216,7 +220,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   useEffect(() => {
     const filtered = flatOptions.filter((fot) => fot.label.includes(inputText));
-    if (filtered.length === 0) {
+    if (filtered.length === 0 && creatable) {
       filtered.push({ label: inputText, value: inputText });
     }
     setFilteredOptions(filtered);
@@ -245,16 +249,21 @@ const Select = <T, U extends boolean | undefined = undefined>({
     onChange?.((multiple ? selectedOption : selectedOption?.[0]) as any);
   }, [selectedOption]);
 
-  // useEffect(() => {
-  //   if (remoteFetch && !options) {
-  //     (async () => {
-  //       setLoading(true);
-  //       const res = await remoteFetch();
-  //       setFlatOptions(res as any);
-  //       setLoading(false);
-  //     })();
-  //   }
-  // }, [remoteFetch]);
+  const [w, setW] = useState(4);
+  useEffect(() => {
+    setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0) + 20);
+  }, [inputText]);
+
+  useEffect(() => {
+    if (selectContainerRef && selectContainerRef.current) {
+      setInputBounding(getPosition(selectContainerRef.current));
+    }
+  }, [inputText, w, selectedOption]);
+
+  useEffect(() => {
+    console.log(selectContainerRef.current?.getBoundingClientRect());
+    console.log(selectContainerRef.current?.offsetLeft);
+  }, []);
 
   return (
     <>
@@ -262,12 +271,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
         tabIndex={searchable || creatable ? -1 : 0}
         ref={selectContainerRef}
         className={cn(
-          'byte-relative byte-flex byte-flex-row',
-          'byte-items-center byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400',
+          'byte-relative byte-flex byte-flex-row byte-items-center',
           {
-            'byte-cursor-text focus-within:byte-ring-1 focus-within:byte-ring-blue-400':
-              searchable || !!creatable,
-          }
+            'byte-cursor-text': searchable || !!creatable,
+          },
+          className ||
+            'byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
         )}
         onClick={() => {
           setShow((prev) => !prev);
@@ -333,10 +342,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
       >
         <div
           className={cn(
+            'byte-flex-wrap byte-overflow-hidden flex-1 ',
             'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center byte-cursor-default byte-transition-all',
             {
               'byte-flex-1': !multiple,
-              'byte-cursor-text': (searchable || !!creatable) && !multiple,
+              'byte-cursor-text': searchable || !!creatable,
             }
           )}
         >
@@ -362,7 +372,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             )}
           {!multiple && selectedOption.length > 0 && (
             <div
-              className={cn({
+              className={cn('byte-px-2', {
                 'byte-text-gray-400 byte-transition-all': show,
                 hidden: show && !!inputText,
               })}
@@ -370,43 +380,57 @@ const Select = <T, U extends boolean | undefined = undefined>({
               {selectedOption[0].label}
             </div>
           )}
+
+          {(searchable || creatable) && (
+            <div
+              style={{
+                width: w,
+              }}
+              className="byte-text-sm"
+            >
+              <div
+                ref={hiddenTextRef}
+                className="byte-invisible byte-h-0 byte-overflow-hidden byte-w-fit"
+              >
+                {inputText}
+              </div>
+              <input
+                autoComplete="off"
+                ref={inputRef}
+                onKeyDown={(e: KeyboardEvent) => {
+                  const key = e.key || `${e.keyCode}`;
+
+                  if (
+                    !inputText &&
+                    key === 'Backspace' &&
+                    multiple &&
+                    (searchable || creatable)
+                  ) {
+                    setSelectedOption((prev) => prev.slice(0, prev.length - 1));
+                  }
+
+                  if (e.code === 'Space' && e.ctrlKey) {
+                    setShow(true);
+                  }
+                }}
+                onKeyUp={() => {
+                  const reg = /^[0-9a-zA-Z@]+$/;
+                  if (!show && inputRef.current?.value.match(reg)) {
+                    setShow(true);
+                  }
+                }}
+                className={cn('byte-outline-none byte-w-full min-w-[4.1px]', {
+                  'byte-absolute byte-bg-transparent byte-ml-0.5':
+                    !multiple && (searchable || !!creatable),
+                })}
+                value={inputText}
+                onChange={({ target }) => {
+                  setInputText(target.value);
+                }}
+              />
+            </div>
+          )}
         </div>
-        {(searchable || creatable) && (
-          <input
-            autoComplete="off"
-            ref={inputRef}
-            onKeyDown={(e: KeyboardEvent) => {
-              const key = e.key || `${e.keyCode}`;
-
-              if (
-                !inputText &&
-                key === 'Backspace' &&
-                multiple &&
-                (searchable || creatable)
-              ) {
-                setSelectedOption((prev) => prev.slice(0, prev.length - 1));
-              }
-
-              if (e.code === 'Space' && e.ctrlKey) {
-                setShow(true);
-              }
-            }}
-            onKeyUp={() => {
-              const reg = /^[0-9a-zA-Z@]+$/;
-              if (!show && inputRef.current?.value.match(reg)) {
-                setShow(true);
-              }
-            }}
-            className={cn('byte-flex-1 byte-outline-none', {
-              'byte-absolute byte-bg-transparent byte-ml-0.5':
-                !multiple && (searchable || !!creatable),
-            })}
-            value={inputText}
-            onChange={({ target }) => {
-              setInputText(target.value);
-            }}
-          />
-        )}
         {suffix === undefined ? (
           <div
             tabIndex={-1}
@@ -443,7 +467,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             tabIndex={-1}
             className={cn(
               'react-select-portal',
-              portalClass || 'byte-absolute byte-z-[9999]'
+              portalClass || 'byte-absolute byte-z-[9999999999999999999]'
             )}
             onClick={() => {
               if (!multiple) {
@@ -454,8 +478,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
               inputRef.current?.focus();
             }}
             style={{
-              left: inputBounding.left,
-              top: inputBounding.top + inputBounding.height + offsetVertical,
+              left: inputBounding.left + window.pageXOffset,
+              top:
+                inputBounding.top +
+                inputBounding.height +
+                offsetVertical +
+                window.pageYOffset,
               minWidth: inputBounding.width,
             }}
           >
@@ -488,7 +516,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
               >
                 {(data) => {
                   const { label, value, render, group, groupMode } = data;
-                  const selectValue = data;
+                  const selectValue = { ...data };
                   delete selectValue.group;
                   delete selectValue.groupMode;
                   delete selectValue.render;

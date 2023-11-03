@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import ReactDOMS from 'react-dom/server';
 import './scss/build.scss';
 import Select from './select';
 import { cn } from './utils';
@@ -118,15 +119,21 @@ const _v = [
   },
 ];
 root.render(
-  <div className="byte-p-3">
-    <Select
-      value={_v}
-      multiple
-      searchable
-      onChange={(x) => {
-        console.log(x);
-      }}
-      options={async () => _options}
-    />
+  <div style={{ width: '200vw', height: '200vh' }}>
+    <div style={{ width: '50vw', marginLeft: '300px', marginTop: '300px' }}>
+      <Select
+        value={_v[0]}
+        onChange={(x) => {
+          console.log(x);
+        }}
+        options={async () => _options}
+      />
+      <input
+        value="helloi"
+        className="byte-pt-3 byte-px-4 byte-border byte-mt-3"
+      />
+    </div>
   </div>
 );
+
+console.log(ReactDOMS.renderToString(<div>hello</div>));
