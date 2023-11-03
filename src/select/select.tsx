@@ -10,8 +10,8 @@ import {
   useRef,
   useState,
 } from 'react';
+// import scrollIntoView from 'scroll-into-view-if-needed';
 import CloseIcon from './close-icon';
-import './css/index.scss';
 import DropdownIcon from './dropdown-icon';
 import type { IGroupOption, IOption } from './option';
 import OptionRenderer, { IOptionItem } from './option-renderer';
@@ -41,18 +41,14 @@ export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
   virtual?: boolean;
   noOptionMessage?: ReactNode;
+  placeholder?: ReactNode;
   multiple?: U;
   searchable?: boolean;
   creatable?: ReactNode;
   suffix?: ReactNode;
   showclear?: boolean;
   tagRender?: ReactElement<ITagRender>;
-  menuItemRender?: ({
-    active,
-    focused,
-    innerProps,
-    forwardedRef,
-  }: IOptionItem) => ReactNode;
+  menuItemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
   className?: string;
   portalClass?: string;
   menuClass?: string;
@@ -66,7 +62,12 @@ export interface ISelect<T, U> {
 
 const getPosition = (target: HTMLDivElement) => {
   const { left, top, height, width } = target.getBoundingClientRect();
-  return { left, top, width, height };
+  return {
+    left: left + window.pageXOffset,
+    top: top + window.pageYOffset,
+    width,
+    height,
+  };
 };
 
 const Select = <T, U extends boolean | undefined = undefined>({
@@ -85,6 +86,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   onChange,
   value,
   menuItemRender,
+  placeholder,
   className,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
@@ -260,11 +262,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   }, [inputText, w, selectedOption]);
 
-  useEffect(() => {
-    console.log(selectContainerRef.current?.getBoundingClientRect());
-    console.log(selectContainerRef.current?.offsetLeft);
-  }, []);
-
   return (
     <>
       <div
@@ -276,7 +273,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             'byte-cursor-text': searchable || !!creatable,
           },
           className ||
-            'byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
+            'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
         )}
         onClick={() => {
           setShow((prev) => !prev);
@@ -298,6 +295,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
           const { key } = e;
 
           if (['ArrowUp', 'ArrowDown'].includes(key)) {
+            console.log(selectContainerRef.current?.getBoundingClientRect());
+
+            e.preventDefault();
             if (!show) {
               setShow(true);
             }
@@ -311,8 +311,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   optionItem.removeAttribute('focused');
                   optionItem.nextElementSibling.setAttribute('focused', 'true');
                   setHoveredElement(optionItem.nextElementSibling);
-                  optionItem.nextElementSibling.scrollIntoView({
-                    block: 'end',
+
+                  listRef.current?.scrollTo({
+                    key: optionItem.getAttribute('data-value') || '',
+                    align: 'top',
+                    offset: optionItem.clientHeight,
                   });
                 }
               } else if (key === 'ArrowUp') {
@@ -322,13 +325,21 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     'focused',
                     'true'
                   );
-                  optionItem.previousElementSibling.scrollIntoView({
-                    block: 'end',
+
+                  listRef.current?.scrollTo({
+                    key: optionItem.getAttribute('data-value') || '',
+                    align: 'bottom',
+                    offset: optionItem.clientHeight,
                   });
+
                   setHoveredElement(optionItem.previousElementSibling);
                 }
               }
             }
+          }
+
+          if (e.code === 'Space' && e.ctrlKey) {
+            setShow(true);
           }
 
           if (key === 'Enter' && show) {
@@ -342,14 +353,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
       >
         <div
           className={cn(
-            'byte-flex-wrap byte-overflow-hidden flex-1 ',
-            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center byte-cursor-default byte-transition-all',
+            'byte-flex-wrap byte-overflow-hidden byte-flex-1 ',
+            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center byte-cursor-default',
             {
               'byte-flex-1': !multiple,
               'byte-cursor-text': searchable || !!creatable,
-            }
+            },
+            multiple && selectedOption.length > 0 ? '-byte-ml-1' : ''
           )}
         >
+          {/* Tag section for multiple selection mode */}
+
           {multiple &&
             selectedOption.map(
               (so) =>
@@ -372,7 +386,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             )}
           {!multiple && selectedOption.length > 0 && (
             <div
-              className={cn('byte-px-2', {
+              className={cn({
                 'byte-text-gray-400 byte-transition-all': show,
                 hidden: show && !!inputText,
               })}
@@ -381,12 +395,39 @@ const Select = <T, U extends boolean | undefined = undefined>({
             </div>
           )}
 
+          {/* Placeholder */}
+
+          {typeof placeholder === 'string' ? (
+            <div
+              className={cn(
+                'byte-text-black/20 byte-absolute byte-left-0 byte-px-2.5',
+                placeholder && !inputText && selectedOption.length === 0
+                  ? 'byte-opacity-100'
+                  : 'byte-opacity-0'
+              )}
+            >
+              {placeholder}
+            </div>
+          ) : (
+            <div
+              className={cn(
+                'byte-absolute byte-left-0 byte-px-2.5',
+                placeholder && !inputText && selectedOption.length === 0
+                  ? 'byte-opacity-100'
+                  : 'byte-opacity-0'
+              )}
+            >
+              {placeholder}
+            </div>
+          )}
+
+          {/* Input field for searchable or creatable mode */}
+
           {(searchable || creatable) && (
             <div
               style={{
                 width: w,
               }}
-              className="byte-text-sm"
             >
               <div
                 ref={hiddenTextRef}
@@ -431,6 +472,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
             </div>
           )}
         </div>
+
+        {/* Suffix aka clear and dropdown icon */}
+
         {suffix === undefined ? (
           <div
             tabIndex={-1}
@@ -460,6 +504,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
           suffix
         )}
       </div>
+
+      {/* Popup list section */}
+
       <AnimatePresence>
         {show && (
           <Portal
@@ -478,12 +525,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
               inputRef.current?.focus();
             }}
             style={{
-              left: inputBounding.left + window.pageXOffset,
-              top:
-                inputBounding.top +
-                inputBounding.height +
-                offsetVertical +
-                window.pageYOffset,
+              left: inputBounding.left,
+              top: inputBounding.top + inputBounding.height + offsetVertical,
               minWidth: inputBounding.width,
             }}
           >
@@ -501,6 +544,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       initial: { opacity: 0, translateY: -5 },
                       animate: { opacity: 1, translateY: 0 },
                       exit: { opacity: 0, translateY: -5 },
+                      transition: { duration: 0.2 },
                     }))}
               ref={dialogRef}
             >

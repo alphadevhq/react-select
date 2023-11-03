@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import ReactDOMS from 'react-dom/server';
-import './scss/build.scss';
+import { cn } from './select/utils';
 import Select from './select';
-import { cn } from './utils';
 
 const _options = [
   {
@@ -122,11 +121,14 @@ root.render(
   <div style={{ width: '200vw', height: '200vh' }}>
     <div style={{ width: '50vw', marginLeft: '300px', marginTop: '300px' }}>
       <Select
-        value={_v[0]}
+        multiple
+        searchable
+        value={undefined}
         onChange={(x) => {
           console.log(x);
         }}
         options={async () => _options}
+        placeholder="hello"
       />
       <input
         value="helloi"

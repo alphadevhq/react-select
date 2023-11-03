@@ -1,5 +1,5 @@
 {
-  "include": ["./src/select.tsx"],
+  "include": ["./src/select/**/*"],
   "compilerOptions": {
     "skipLibCheck": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

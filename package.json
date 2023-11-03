@@ -5,7 +5,7 @@
   "version": "0.0.87",
   "description": "This is a simple react component that can be used to wrap other components and add a pulsing/skeleton effect to them.",
   "private": false,
-  "types": "./dist/@types/select.d.ts",
+  "types": "./dist/@types/index.d.ts",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "sideEffects": false,
@@ -58,13 +58,14 @@
     "build:css": "tailwindcss -i ./src/scss/build.scss -o ./src/css/index.scss"
   },
   "dependencies": {
+    "scroll-into-view-if-needed": "^3.1.0"
   },
   "peerDependencies": {
     "@radix-ui/react-portal": "^1.0.4",
-    "rc-virtual-list": "^3.11.2",
+    "classnames": "^2.3.2",
     "framer-motion": "^10.16.4",
-    "react": "^18.2.0 || ^17.0.0 || ^16.0.0",
-    "classnames": "^2.3.2"
+    "rc-virtual-list": "^3.11.2",
+    "react": "^18.2.0 || ^17.0.0 || ^16.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.22",

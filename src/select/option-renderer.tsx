@@ -18,12 +18,13 @@ export type IOptionItem = {
   label: string;
   value: string;
   render: IOptionRender;
-  forwardedRef: any;
   innerProps?: {
     group?: string | null;
     onClick: () => void;
     onMouseMove: () => void;
     onFocus: (e: FocusEvent) => void;
+    ref: any;
+    tabIndex: number | undefined;
   };
 };
 interface IOptionRenderer {
@@ -38,12 +39,7 @@ interface IOptionRenderer {
   label: string;
   value: string;
   groupMode: boolean;
-  itemRender?: ({
-    active,
-    focused,
-    innerProps,
-    forwardedRef,
-  }: IOptionItem) => ReactNode;
+  itemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
 }
 
 const OptionRenderer = forwardRef(
@@ -116,7 +112,11 @@ const OptionRenderer = forwardRef(
     }, [enterPressed]);
 
     return (
-      <div className="option-item-container" ref={wrapperRef}>
+      <div
+        className="option-item-container"
+        ref={wrapperRef}
+        data-value={value}
+      >
         {group && (
           <div className="byte-text-xs byte-text-black/50 byte-py-2 byte-px-2">
             {group}
@@ -151,7 +151,6 @@ const OptionRenderer = forwardRef(
         {ItemRender && (
           <ItemRender
             {...{
-              forwardedRef: ref,
               render,
               active,
               label,
@@ -162,6 +161,8 @@ const OptionRenderer = forwardRef(
                 onMouseMove: handleFocus,
                 group,
                 onFocus,
+                tabIndex: -1,
+                ref,
               },
             }}
           />
