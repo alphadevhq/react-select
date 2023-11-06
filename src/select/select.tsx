@@ -513,7 +513,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             ref={portalRef}
             tabIndex={-1}
             className={cn(
-              'react-select-portal',
+              'react-select-portal byte-pointer-events-auto',
               portalClass || 'byte-absolute byte-z-[9999999999999999999]'
             )}
             onClick={() => {
@@ -533,9 +533,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
             <motion.div
               tabIndex={-1}
               className={cn(
-                'react-select-dialog byte-flex byte-flex-col ',
+                'relative byte-z-[99999999999999999999] react-select-dialog byte-flex byte-flex-col ',
                 menuClass ||
-                  'byte-bg-white byte-rounded-lg byte-p-1 byte-z-50 byte-shadow-menu'
+                  'byte-bg-white byte-rounded-lg byte-p-1 byte-shadow-menu'
               )}
               {...(animation ||
                 (animation === null

@@ -1,3 +1,7 @@
+.byte-pointer-events-auto {
+  pointer-events: auto;
+}
+
 .byte-invisible {
   visibility: hidden;
 }
@@ -14,8 +18,8 @@
   left: 0px;
 }
 
-.byte-z-50 {
-  z-index: 50;
+.byte-z-\[99999999999999999999\] {
+  z-index: 99999999999999999999;
 }
 
 .byte-z-\[9999999999999999999\] {
