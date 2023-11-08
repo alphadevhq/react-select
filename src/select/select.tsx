@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react/react-in-jsx-scope */
 import { Portal } from '@radix-ui/react-portal';
 import { AnimatePresence, AnimationProps, motion } from 'framer-motion';
@@ -43,18 +44,18 @@ export interface ISelect<T, U> {
   noOptionMessage?: ReactNode;
   placeholder?: ReactNode;
   multiple?: U;
+  disabled?: boolean;
   searchable?: boolean;
   creatable?: ReactNode;
   suffix?: ReactNode;
   showclear?: boolean;
   tagRender?: ReactElement<ITagRender>;
   menuItemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
-  className?: string;
+  className?:
+    | string
+    | (() => { focus?: string; disabled?: string; default?: string });
   portalClass?: string;
   menuClass?: string;
-  creatableClass?:
-    | string
-    | (() => { active: string; focus: string; default: string });
   animation?: null | AnimationProps;
   onChange?: (value: ExtractOptionType<T, U>) => void;
   value: ExtractOptionType<T, U> | undefined;
@@ -73,6 +74,7 @@ const getPosition = (target: HTMLDivElement) => {
 const Select = <T, U extends boolean | undefined = undefined>({
   options,
   multiple = false,
+  disabled = false,
   virtual = true,
   searchable = false,
   noOptionMessage,
@@ -144,7 +146,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
         }
       }
     }
-    console.log(value);
   }, [flatOptions, value]);
 
   useEffect(() => {
@@ -193,6 +194,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
     if (show) {
       makeItemActive();
+      listRef.current?.scrollTo({
+        index: 0,
+      });
     }
   }, [show]);
 
@@ -253,7 +257,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   const [w, setW] = useState(4);
   useEffect(() => {
-    setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0) + 20);
+    setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0));
   }, [inputText]);
 
   useEffect(() => {
@@ -261,6 +265,29 @@ const Select = <T, U extends boolean | undefined = undefined>({
       setInputBounding(getPosition(selectContainerRef.current));
     }
   }, [inputText, w, selectedOption]);
+
+  useEffect(() => {
+    selectContainerRef.current?.setAttribute('disabled', `${disabled}`);
+  }, [disabled]);
+
+  const setFocus = () => {
+    if (disabled) {
+      return;
+    }
+    if (className && typeof className === 'function' && !!className().focus) {
+      selectContainerRef.current?.classList.add(
+        ...(className().focus?.split(' ') || [''])
+      );
+    }
+  };
+
+  const removeFocus = () => {
+    if (className && typeof className === 'function' && !!className().focus) {
+      selectContainerRef.current?.classList.remove(
+        ...(className().focus?.split(' ') || [''])
+      );
+    }
+  };
 
   return (
     <>
@@ -270,19 +297,24 @@ const Select = <T, U extends boolean | undefined = undefined>({
         className={cn(
           'byte-relative byte-flex byte-flex-row byte-items-center',
           {
-            'byte-cursor-text': searchable || !!creatable,
+            'byte-cursor-text': (searchable || !!creatable) && !disabled,
           },
-          className ||
-            'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
+          className && typeof className === 'function'
+            ? `${className().default} ${disabled ? className().disabled : ''}`
+            : className ||
+                'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
         )}
         onClick={() => {
-          setShow((prev) => !prev);
-          inputRef.current?.focus();
-          setInputBounding(
-            getPosition(selectContainerRef.current as HTMLDivElement)
-          );
+          if (!disabled) {
+            setShow((prev) => !prev);
+            inputRef.current?.focus();
+            setInputBounding(
+              getPosition(selectContainerRef.current as HTMLDivElement)
+            );
+          }
         }}
         onBlur={(e) => {
+          removeFocus();
           if (
             !portalRef?.current?.contains(e.relatedTarget) &&
             !selectContainerRef.current?.contains(e.relatedTarget) &&
@@ -291,12 +323,16 @@ const Select = <T, U extends boolean | undefined = undefined>({
             setShow(false);
           }
         }}
+        onFocus={() => {
+          setFocus();
+        }}
         onKeyDown={(e) => {
+          if (disabled) {
+            return;
+          }
           const { key } = e;
 
           if (['ArrowUp', 'ArrowDown'].includes(key)) {
-            console.log(selectContainerRef.current?.getBoundingClientRect());
-
             e.preventDefault();
             if (!show) {
               setShow(true);
@@ -335,6 +371,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   setHoveredElement(optionItem.previousElementSibling);
                 }
               }
+            } else {
+              makeItemActive();
             }
           }
 
@@ -354,10 +392,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
         <div
           className={cn(
             'byte-flex-wrap byte-overflow-hidden byte-flex-1 ',
-            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center byte-cursor-default',
+            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center',
             {
               'byte-flex-1': !multiple,
-              'byte-cursor-text': searchable || !!creatable,
+              'byte-cursor-text': (searchable || !!creatable) && !disabled,
             },
             multiple && selectedOption.length > 0 ? '-byte-ml-1' : ''
           )}
@@ -375,6 +413,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   })) || (
                   <Tag
                     key={so.value}
+                    disabled={disabled}
                     value={so.value}
                     onClose={(value) => {
                       removeTag(value);
@@ -387,8 +426,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
           {!multiple && selectedOption.length > 0 && (
             <div
               className={cn({
-                'byte-text-gray-400 byte-transition-all': show,
-                hidden: show && !!inputText,
+                'byte-transition-all': show,
+                'byte-hidden': show || !!inputText,
               })}
             >
               {selectedOption[0].label}
@@ -397,10 +436,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
           {/* Placeholder */}
 
-          {typeof placeholder === 'string' ? (
+          {selectedOption.length > 0 ? null : typeof placeholder ===
+            'string' ? (
             <div
               className={cn(
-                'byte-text-black/20 byte-absolute byte-left-0 byte-px-2.5',
+                'byte-text-black/20 byte-absolute byte-left-0 byte-px-2.5 byte-transition-all',
                 placeholder && !inputText && selectedOption.length === 0
                   ? 'byte-opacity-100'
                   : 'byte-opacity-0'
@@ -411,7 +451,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           ) : (
             <div
               className={cn(
-                'byte-absolute byte-left-0 byte-px-2.5',
+                'byte-absolute byte-left-0 byte-px-2.5 byte-transition-all',
                 placeholder && !inputText && selectedOption.length === 0
                   ? 'byte-opacity-100'
                   : 'byte-opacity-0'
@@ -424,51 +464,74 @@ const Select = <T, U extends boolean | undefined = undefined>({
           {/* Input field for searchable or creatable mode */}
 
           {(searchable || creatable) && (
-            <div
-              style={{
-                width: w,
-              }}
-            >
+            <div className={cn('byte-max-w-full')}>
               <div
                 ref={hiddenTextRef}
-                className="byte-invisible byte-h-0 byte-overflow-hidden byte-w-fit"
+                className="byte-invisible byte-h-0 byte-overflow-hidden byte-w-fit byte-whitespace-pre"
               >
                 {inputText}
               </div>
-              <input
-                autoComplete="off"
-                ref={inputRef}
-                onKeyDown={(e: KeyboardEvent) => {
-                  const key = e.key || `${e.keyCode}`;
-
-                  if (
-                    !inputText &&
-                    key === 'Backspace' &&
-                    multiple &&
-                    (searchable || creatable)
-                  ) {
-                    setSelectedOption((prev) => prev.slice(0, prev.length - 1));
-                  }
-
-                  if (e.code === 'Space' && e.ctrlKey) {
-                    setShow(true);
-                  }
+              <div
+                style={{
+                  maxWidth: '100%',
+                  width: Math.max(
+                    4,
+                    (hiddenTextRef.current?.clientWidth || 0) + 20
+                  ),
                 }}
-                onKeyUp={() => {
-                  const reg = /^[0-9a-zA-Z@]+$/;
-                  if (!show && inputRef.current?.value.match(reg)) {
-                    setShow(true);
-                  }
-                }}
-                className={cn('byte-outline-none byte-w-full min-w-[4.1px]', {
-                  'byte-absolute byte-bg-transparent byte-ml-0.5':
-                    !multiple && (searchable || !!creatable),
+                className={cn({
+                  'byte-flex byte-items-center': !multiple,
                 })}
-                value={inputText}
-                onChange={({ target }) => {
-                  setInputText(target.value);
-                }}
-              />
+              >
+                <input
+                  disabled={disabled}
+                  autoComplete="off"
+                  ref={inputRef}
+                  onPaste={() => {
+                    setShow(true);
+                  }}
+                  onFocus={() => {
+                    setFocus();
+                  }}
+                  onBlur={() => {
+                    removeFocus();
+                  }}
+                  onKeyDown={(e: KeyboardEvent) => {
+                    const key = e.key || `${e.keyCode}`;
+
+                    if (
+                      !inputText &&
+                      key === 'Backspace' &&
+                      multiple &&
+                      (searchable || creatable)
+                    ) {
+                      setSelectedOption((prev) =>
+                        prev.slice(0, prev.length - 1)
+                      );
+                    }
+
+                    if (e.code === 'Space' && e.ctrlKey) {
+                      setShow(true);
+                    }
+                  }}
+                  onKeyUp={() => {
+                    const reg = /^[0-9a-zA-Z@]+$/;
+                    if (!show && inputRef.current?.value.match(reg)) {
+                      setShow(true);
+                    }
+                  }}
+                  className={cn(
+                    'byte-outline-none byte-w-full min-w-[4.1px] byte-bg-transparent',
+                    {
+                      'byte-absolute': !multiple && (searchable || !!creatable),
+                    }
+                  )}
+                  value={inputText}
+                  onChange={({ target }) => {
+                    setInputText(target.value);
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -478,14 +541,14 @@ const Select = <T, U extends boolean | undefined = undefined>({
         {suffix === undefined ? (
           <div
             tabIndex={-1}
-            className="byte-text-stone-400 byte-mx-1.5 byte-flex byte-flex-row byte-items-center gap-2 min-h-[24px]"
+            className="byte-mx-1.5 byte-flex byte-flex-row byte-items-center gap-2 min-h-[24px]"
           >
             {loading && (
               <div className="byte-animate-spin">
                 <SemiCircleIcon size={16} />
               </div>
             )}
-            {showclear && selectedOption.length > 0 && (
+            {showclear && !disabled && selectedOption.length > 0 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -493,7 +556,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   inputRef.current?.focus();
                 }}
                 tabIndex={-1}
-                className="byte-outline-none hover:byte-text-stone-500 byte-transition-all min-h-[24px]"
+                className="byte-outline-none byte-opacity-80 hover:byte-opacity-100 byte-transition-all min-h-[24px]"
               >
                 <CloseIcon size={16} />
               </button>
@@ -528,6 +591,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
               left: inputBounding.left,
               top: inputBounding.top + inputBounding.height + offsetVertical,
               minWidth: inputBounding.width,
+              maxWidth: inputBounding.width,
             }}
           >
             <motion.div

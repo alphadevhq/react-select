@@ -130,7 +130,7 @@ const OptionRenderer = forwardRef(
               'option-item',
               typeof render === 'string'
                 ? {
-                    'byte-flex byte-flex-row byte-items-center byte-select-option byte-cursor-pointer byte-py-2 byte-rounded-lg byte-border-t byte-border-y-white':
+                    'byte-select-option byte-cursor-pointer byte-py-2 byte-rounded-lg byte-border-t byte-border-y-white byte-truncate ':
                       true,
                     'byte-bg-sky-100 byte-font-bold': active,
                     'byte-outline-none': !active,
