@@ -131,23 +131,23 @@ root.render(
         }}
         options={async () => _options}
         placeholder="hello"
-        className={() => ({
-          default:
-            'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none',
-          focus: 'byte-ring-1 byte-ring-orange-400',
-          disabled: 'byte-text-black/25 byte-bg-black/5 byte-border-stone-100',
-        })}
-        menuItemRender={({ label, innerProps, active, focused }) => (
-          <div
-            {...innerProps}
-            className={cn({
-              'byte-bg-black/25': !!active,
-              'byte-bg-stone-200': !!focused && !active,
-            })}
-          >
-            {label}
-          </div>
-        )}
+        // className={() => ({
+        //   default:
+        //     'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none',
+        //   focus: 'byte-ring-1 byte-ring-orange-400',
+        //   disabled: 'byte-text-black/25 byte-bg-black/5 byte-border-stone-100',
+        // })}
+        // menuItemRender={({ label, innerProps, active, focused }) => (
+        //   <div
+        //     {...innerProps}
+        //     className={cn({
+        //       'byte-bg-black/25': !!active,
+        //       'byte-bg-stone-200': !!focused && !active,
+        //     })}
+        //   >
+        //     {label}
+        //   </div>
+        // )}
       />
       <input
         value="helloi"

@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/react-in-jsx-scope */
 import { Portal } from '@radix-ui/react-portal';
@@ -296,9 +297,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
         ref={selectContainerRef}
         className={cn(
           'byte-relative byte-flex byte-flex-row byte-items-center',
-          {
-            'byte-cursor-text': (searchable || !!creatable) && !disabled,
-          },
           className && typeof className === 'function'
             ? `${className().default} ${disabled ? className().disabled : ''}`
             : className ||
@@ -392,7 +390,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
         <div
           className={cn(
             'byte-flex-wrap byte-overflow-hidden byte-flex-1 ',
-            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px] byte-items-center',
+            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px]',
             {
               'byte-flex-1': !multiple,
               'byte-cursor-text': (searchable || !!creatable) && !disabled,
@@ -425,7 +423,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             )}
           {!multiple && selectedOption.length > 0 && (
             <div
-              className={cn({
+              className={cn('byte-flex byte-items-center', {
                 'byte-transition-all': show,
                 'byte-hidden': show || !!inputText,
               })}
@@ -464,7 +462,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
           {/* Input field for searchable or creatable mode */}
 
           {(searchable || creatable) && (
-            <div className={cn('byte-max-w-full')}>
+            <div
+              className={cn('byte-max-w-full', {
+                'byte-relative byte-flex-1': !multiple,
+              })}
+            >
               <div
                 ref={hiddenTextRef}
                 className="byte-invisible byte-h-0 byte-overflow-hidden byte-w-fit byte-whitespace-pre"
@@ -515,15 +517,19 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     }
                   }}
                   onKeyUp={() => {
-                    const reg = /^[0-9a-zA-Z@]+$/;
+                    const reg = /^[0-9a-zA-Z\\@#$-/:-?{-~!"^_`\[\]]+$/;
                     if (!show && inputRef.current?.value.match(reg)) {
                       setShow(true);
                     }
                   }}
                   className={cn(
-                    'byte-outline-none byte-w-full min-w-[4.1px] byte-bg-transparent',
+                    'byte-outline-none min-w-[4.1px] byte-bg-transparent',
                     {
-                      'byte-absolute': !multiple && (searchable || !!creatable),
+                      'byte-w-full ': multiple,
+                    },
+                    {
+                      'byte-absolute byte-inset-0':
+                        !multiple && (searchable || !!creatable),
                     }
                   )}
                   value={inputText}
