@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from 'react';
-// import scrollIntoView from 'scroll-into-view-if-needed';
 import CloseIcon from './close-icon';
 import DropdownIcon from './dropdown-icon';
 import type { IGroupOption, IOption } from './option';
@@ -46,6 +45,7 @@ export interface ISelect<T, U> {
   disableWhileLoading?: boolean;
   placeholder?: ReactNode;
   multiple?: U;
+  open?: boolean | undefined;
   disabled?: boolean;
   searchable?: boolean;
   creatable?: ReactNode;
@@ -78,6 +78,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   multiple = false,
   disabled = false,
   virtual = true,
+  open = undefined,
   searchable = false,
   noOptionMessage,
   disableWhileLoading,
@@ -282,6 +283,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
     selectContainerRef.current?.setAttribute('disabled', `${disabled}`);
   }, [disabled, disableWhileLoading, loading]);
 
+  useEffect(() => {
+    setShow(true);
+  }, [open]);
+
   const setFocus = () => {
     if (isDisabled) {
       return;
@@ -301,13 +306,19 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   };
 
+  const closeList = () => {
+    if (open === undefined) {
+      setShow(false);
+    }
+  };
+
   return (
     <>
       <div
         tabIndex={searchable || creatable ? -1 : 0}
         ref={selectContainerRef}
         className={cn(
-          'byte-relative byte-flex byte-flex-row byte-items-center',
+          'byte-select byte-relative byte-flex byte-flex-row byte-items-center',
           {
             'byte-text-black/25 byte-bg-black/5 byte-border-stone-100':
               !className && isDisabled,
@@ -315,11 +326,15 @@ const Select = <T, U extends boolean | undefined = undefined>({
           className && typeof className === 'function'
             ? `${className().default} ${isDisabled ? className().disabled : ''}`
             : className ||
-                'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
+                'byte-bg-white byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
         )}
         onClick={() => {
           if (!isDisabled) {
-            setShow((prev) => !prev);
+            if (show) {
+              closeList();
+            } else {
+              setShow(true);
+            }
             inputRef.current?.focus();
             setInputBounding(
               getPosition(selectContainerRef.current as HTMLDivElement)
@@ -333,7 +348,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             !selectContainerRef.current?.contains(e.relatedTarget) &&
             show
           ) {
-            setShow(false);
+            closeList();
           }
         }}
         onFocus={() => {
@@ -398,7 +413,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           }
 
           if (key === 'Escape') {
-            setShow(false);
+            closeList();
           }
         }}
       >
@@ -441,7 +456,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             <div
               className={cn('byte-flex byte-items-center byte-min-w-0', {
                 'byte-transition-all': show,
-                'byte-hidden': show || !!inputText,
+                'byte-hidden': (show || !!inputText) && !open,
               })}
             >
               <div
@@ -600,12 +615,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
             ref={portalRef}
             tabIndex={-1}
             className={cn(
-              'react-select-portal byte-pointer-events-auto',
+              'byte-select react-select-portal byte-pointer-events-auto',
               portalClass || 'byte-absolute byte-z-[9999999999999999999]'
             )}
             onClick={() => {
               if (!multiple) {
-                setShow(false);
+                closeList();
               }
             }}
             onFocus={() => {
@@ -645,6 +660,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 itemHeight={30}
                 tabIndex={-1}
                 ref={listRef}
+                className="byte-select"
               >
                 {(data) => {
                   const { label, value, render, group, groupMode } = data;
@@ -672,7 +688,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                         inputRef.current?.focus();
                         if (!multiple) {
                           setSelectedOption([selectValue]);
-                          setShow(false);
+                          closeList();
                         } else if (findElement) {
                           setSelectedOption(
                             selectedOption.filter((v) => v.value !== value)

@@ -130,6 +130,7 @@ root.render(
         onChange={(x) => {
           console.log(x);
         }}
+        open
         options={_f}
         placeholder="hello"
         // className={() => ({

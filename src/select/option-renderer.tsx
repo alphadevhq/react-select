@@ -80,9 +80,11 @@ const OptionRenderer = forwardRef(
             ?.querySelector('.option-item')
             ?.classList.remove('byte-bg-gray-400/10');
         });
-        wrapperRef.current
-          ?.querySelector('.option-item')
-          ?.classList.add('byte-bg-gray-400/10');
+        if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
+          wrapperRef.current
+            ?.querySelector('.option-item')
+            ?.classList.add('byte-bg-gray-400/10');
+        }
       }
 
       wrapperRef.current?.setAttribute('focused', 'true');
@@ -94,9 +96,11 @@ const OptionRenderer = forwardRef(
 
       if (typeof render === 'string') {
         if (wrapperRef.current?.hasAttribute('focused')) {
-          wrapperRef.current
-            ?.querySelector('.option-item')
-            ?.classList.add('byte-bg-gray-400/10');
+          if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
+            wrapperRef.current
+              ?.querySelector('.option-item')
+              ?.classList.add('byte-bg-gray-400/10');
+          }
         } else {
           wrapperRef.current
             ?.querySelector('.option-item')
@@ -116,6 +120,7 @@ const OptionRenderer = forwardRef(
         className="option-item-container"
         ref={wrapperRef}
         data-value={value}
+        data-active={active}
       >
         {group && (
           <div className="byte-text-xs byte-text-black/50 byte-py-2 byte-px-2">
@@ -130,10 +135,9 @@ const OptionRenderer = forwardRef(
               'option-item',
               typeof render === 'string'
                 ? {
-                    'byte-select-option byte-cursor-pointer byte-py-2 byte-rounded-lg byte-border-t byte-border-y-white byte-truncate ':
+                    'byte-select byte-select-option byte-outline-none byte-cursor-pointer byte-py-2 byte-rounded-lg byte-border-t byte-border-t-white byte-truncate ':
                       true,
-                    'byte-bg-sky-100 byte-font-bold': active,
-                    'byte-outline-none': !active,
+                    'byte-text-black byte-bg-[#E3E3E3] byte-font-bold': active,
                     'byte-pr-2 byte-pl-5': groupMode,
                     'byte-px-2': !groupMode,
                   }

@@ -58,7 +58,6 @@
     "build:css": "tailwindcss -i ./src/scss/build.scss -o ./src/css/index.scss"
   },
   "dependencies": {
-    "scroll-into-view-if-needed": "^3.1.0"
   },
   "peerDependencies": {
     "@radix-ui/react-portal": "^1.0.4",
