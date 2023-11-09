@@ -79,14 +79,14 @@ export function mapper<A, B>(
 
 const _f = async () => {
   const x = await (
-    await fetch('https://jsonplaceholder.typicode.com/todos')
+    await fetch('https://jsonplaceholder.typicode.com/photos')
   ).json();
   const k = mapper(x, (d: any) => ({
     label: `${d.title}`,
     value: `${d.id}`,
-    extra: { a: 'h' },
+    extra: { a: 'h', url: d.thumbnailUrl },
   }));
-  return k;
+  return [...k, ...k, ...k];
 };
 
 const _v = [
@@ -124,12 +124,13 @@ root.render(
         // multiple
         searchable
         creatable
-        value={_v[0]}
+        value={undefined}
+        disableWhileLoading
         // disabled
         onChange={(x) => {
           console.log(x);
         }}
-        options={async () => _options}
+        options={_f}
         placeholder="hello"
         // className={() => ({
         //   default:

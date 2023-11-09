@@ -1,2 +1,18 @@
 @tailwind utilities;
 @tailwind base;
+
+
+*{
+    border-style: solid;
+    border-width: 0px;
+    @apply byte-font-sans;
+}
+button{
+    all:unset;
+    cursor: pointer;
+    display: flex;
+}
+
+input{
+    all:unset;
+}

@@ -17,10 +17,10 @@ import CloseIcon from './close-icon';
 import DropdownIcon from './dropdown-icon';
 import type { IGroupOption, IOption } from './option';
 import OptionRenderer, { IOptionItem } from './option-renderer';
-import SemiCircleIcon from './semi-circle-icon';
 import Tag from './tag';
 import type { ITagRender } from './tag-render';
 import { cn } from './utils';
+import Loading from './loading';
 
 type ISelectedOption<T extends Record<string, any>> =
   | {
@@ -43,6 +43,7 @@ export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
   virtual?: boolean;
   noOptionMessage?: ReactNode;
+  disableWhileLoading?: boolean;
   placeholder?: ReactNode;
   multiple?: U;
   disabled?: boolean;
@@ -79,6 +80,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   virtual = true,
   searchable = false,
   noOptionMessage,
+  disableWhileLoading,
   creatable = false,
   suffix = undefined,
   showclear = true,
@@ -106,6 +108,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const [show, setShow] = useState(false);
   const [offsetVertical] = useState(5);
   const [loading, setLoading] = useState(false);
+
+  const [isDisabled, setIsDisabled] = useState(false);
 
   const [filteredOptions, setFilteredOptions] = useState<
     (IOption & { group?: string | null; groupMode?: boolean })[]
@@ -227,7 +231,13 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   useEffect(() => {
     const filtered = flatOptions.filter((fot) => fot.label.includes(inputText));
-    if (filtered.length === 0 && creatable) {
+    if (
+      filtered.length === 0 &&
+      creatable &&
+      multiple &&
+      inputText &&
+      !loading
+    ) {
       filtered.push({ label: inputText, value: inputText });
     }
     setFilteredOptions(filtered);
@@ -268,11 +278,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
   }, [inputText, w, selectedOption]);
 
   useEffect(() => {
+    setIsDisabled(disabled || (disableWhileLoading && loading) || false);
     selectContainerRef.current?.setAttribute('disabled', `${disabled}`);
-  }, [disabled]);
+  }, [disabled, disableWhileLoading, loading]);
 
   const setFocus = () => {
-    if (disabled) {
+    if (isDisabled) {
       return;
     }
     if (className && typeof className === 'function' && !!className().focus) {
@@ -297,13 +308,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
         ref={selectContainerRef}
         className={cn(
           'byte-relative byte-flex byte-flex-row byte-items-center',
+          {
+            'byte-text-black/25 byte-bg-black/5 byte-border-stone-100':
+              !className && isDisabled,
+          },
           className && typeof className === 'function'
-            ? `${className().default} ${disabled ? className().disabled : ''}`
+            ? `${className().default} ${isDisabled ? className().disabled : ''}`
             : className ||
                 'byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
         )}
         onClick={() => {
-          if (!disabled) {
+          if (!isDisabled) {
             setShow((prev) => !prev);
             inputRef.current?.focus();
             setInputBounding(
@@ -325,7 +340,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           setFocus();
         }}
         onKeyDown={(e) => {
-          if (disabled) {
+          if (isDisabled) {
             return;
           }
           const { key } = e;
@@ -389,11 +404,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
       >
         <div
           className={cn(
-            'byte-flex-wrap byte-overflow-hidden byte-flex-1 ',
+            'byte-flex-1 byte-overflow-hidden byte-relative',
             'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px]',
             {
+              'byte-flex-wrap': multiple,
               'byte-flex-1': !multiple,
-              'byte-cursor-text': (searchable || !!creatable) && !disabled,
+              'byte-cursor-text': (searchable || !!creatable) && !isDisabled,
             },
             multiple && selectedOption.length > 0 ? '-byte-ml-1' : ''
           )}
@@ -411,7 +427,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   })) || (
                   <Tag
                     key={so.value}
-                    disabled={disabled}
+                    disabled={isDisabled}
                     value={so.value}
                     onClose={(value) => {
                       removeTag(value);
@@ -423,12 +439,18 @@ const Select = <T, U extends boolean | undefined = undefined>({
             )}
           {!multiple && selectedOption.length > 0 && (
             <div
-              className={cn('byte-flex byte-items-center', {
+              className={cn('byte-flex byte-items-center byte-min-w-0', {
                 'byte-transition-all': show,
                 'byte-hidden': show || !!inputText,
               })}
             >
-              {selectedOption[0].label}
+              <div
+                className={cn({
+                  'byte-truncate': !multiple,
+                })}
+              >
+                {selectedOption[0].label}
+              </div>
             </div>
           )}
 
@@ -438,7 +460,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             'string' ? (
             <div
               className={cn(
-                'byte-text-black/20 byte-absolute byte-left-0 byte-px-2.5 byte-transition-all',
+                'byte-text-black/20 byte-absolute byte-left-0 byte-transition-all byte-flex byte-items-center byte-min-h-[24px]',
                 placeholder && !inputText && selectedOption.length === 0
                   ? 'byte-opacity-100'
                   : 'byte-opacity-0'
@@ -449,7 +471,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           ) : (
             <div
               className={cn(
-                'byte-absolute byte-left-0 byte-px-2.5 byte-transition-all',
+                'byte-absolute byte-left-0 byte-transition-all byte-flex byte-items-center byte-min-h-[24px]',
                 placeholder && !inputText && selectedOption.length === 0
                   ? 'byte-opacity-100'
                   : 'byte-opacity-0'
@@ -464,7 +486,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           {(searchable || creatable) && (
             <div
               className={cn('byte-max-w-full', {
-                'byte-relative byte-flex-1': !multiple,
+                'byte-absolute byte-inset-0 byte-flex-1': !multiple,
               })}
             >
               <div
@@ -486,7 +508,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 })}
               >
                 <input
-                  disabled={disabled}
+                  disabled={isDisabled}
                   autoComplete="off"
                   ref={inputRef}
                   onPaste={() => {
@@ -547,14 +569,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
         {suffix === undefined ? (
           <div
             tabIndex={-1}
-            className="byte-mx-1.5 byte-flex byte-flex-row byte-items-center gap-2 min-h-[24px]"
+            className="byte-mx-1.5 byte-flex byte-flex-row byte-items-center gap-2 min-h-[24px] byte-opacity-40"
           >
-            {loading && (
-              <div className="byte-animate-spin">
-                <SemiCircleIcon size={16} />
-              </div>
-            )}
-            {showclear && !disabled && selectedOption.length > 0 && (
+            <Loading loading={loading && !show} />
+            {showclear && !isDisabled && selectedOption.length > 0 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -683,11 +701,18 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 }}
               </List>
               {filteredOptions.length === 0 &&
+                !loading &&
                 (noOptionMessage || (
                   <div className="byte-p-2 byte-self-center byte-text-center byte-flex byte-items-center byte-justify-center">
                     No options
                   </div>
                 ))}
+              {loading && (
+                <div className="byte-p-2 byte-flex-col byte-gap-1 byte-self-center byte-text-center byte-flex byte-items-center byte-justify-center">
+                  <Loading loading={loading} />
+                  <span className="byte-text-sm">loading</span>
+                </div>
+              )}
             </motion.div>
           </Portal>
         )}
