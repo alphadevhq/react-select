@@ -1,23 +1,23 @@
 
-.byte-select, .byte-select  * {
+.zener-select, .zener-select  * {
     border-style: solid;
     border-width: 0px;
-    @apply byte-font-sans;
+    @apply zener-font-sans;
     scroll-behavior: unset !important;
 }
 
-.byte-select svg{
+.zener-select svg{
     display: block;
 }
 
-.byte-select button{
+.zener-select button{
     cursor: pointer;
     -webkit-appearance: button;
     background-color: transparent;
     background-image: none;
 }
 
-.byte-select input, .byte-select button{
+.zener-select input, .zener-select button{
     font-family: inherit;
     /* 1 */
     -webkit-font-feature-settings: inherit;

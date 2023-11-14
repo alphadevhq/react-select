@@ -4,20 +4,12 @@
 import { Portal } from '@radix-ui/react-portal';
 import { AnimatePresence, AnimationProps, motion } from 'framer-motion';
 import List, { ListRef } from 'rc-virtual-list';
-import {
-  KeyboardEvent,
-  ReactElement,
-  ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { KeyboardEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import CloseIcon from './close-icon';
 import DropdownIcon from './dropdown-icon';
 import type { IGroupOption, IOption } from './option';
 import OptionRenderer, { IOptionItem } from './option-renderer';
 import Tag from './tag';
-import type { ITagRender } from './tag-render';
 import { cn } from './utils';
 import Loading from './loading';
 
@@ -38,6 +30,12 @@ type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>
 
 type ExtractArrayType<T> = T extends (infer U)[] ? U : never;
 
+export type ITagRender = (value: {
+  remove: (value: string) => void;
+  value: string;
+  label: string;
+}) => ReactNode;
+
 export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
   virtual?: boolean;
@@ -51,8 +49,13 @@ export interface ISelect<T, U> {
   creatable?: ReactNode;
   suffix?: ReactNode;
   showclear?: boolean;
-  tagRender?: ReactElement<ITagRender>;
-  menuItemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
+  tagRender?: ITagRender;
+  menuItemRender?: ({
+    label,
+    active,
+    focused,
+    innerProps,
+  }: IOptionItem) => ReactNode;
   className?:
     | string
     | (() => { focus?: string; disabled?: string; default?: string });
@@ -61,6 +64,7 @@ export interface ISelect<T, U> {
   animation?: null | AnimationProps;
   onChange?: (value: ExtractOptionType<T, U>) => void;
   value: ExtractOptionType<T, U> | undefined;
+  valueRender?: (value: ExtractOptionType<T, U>) => ReactNode;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -94,6 +98,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   menuItemRender,
   placeholder,
   className,
+  valueRender,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -196,7 +201,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
   useEffect(() => {
     if (!show) {
       setInputText('');
-      inputRef.current?.focus();
     }
     if (show) {
       makeItemActive();
@@ -204,6 +208,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
         index: 0,
       });
     }
+    inputRef.current?.focus();
   }, [show]);
 
   useEffect(() => {
@@ -231,7 +236,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
   }, [options]);
 
   useEffect(() => {
-    const filtered = flatOptions.filter((fot) => fot.label.includes(inputText));
+    const filtered = flatOptions.filter((fot) =>
+      fot.label.toLowerCase().includes(inputText.toLowerCase())
+    );
     if (
       filtered.length === 0 &&
       creatable &&
@@ -260,6 +267,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   const removeTag = (tag: string) => {
     setSelectedOption(selectedOption.filter((so) => so.value !== tag));
+    selectContainerRef.current?.focus();
     inputRef.current?.focus();
   };
 
@@ -284,8 +292,21 @@ const Select = <T, U extends boolean | undefined = undefined>({
   }, [disabled, disableWhileLoading, loading]);
 
   useEffect(() => {
-    setShow(true);
-  }, [open]);
+    if (isDisabled) {
+      setShow(false);
+    } else {
+      setShow(!!open);
+    }
+  }, [open, isDisabled]);
+
+  useEffect(() => {
+    if (menuItemRender) {
+      listRef.current?.scrollTo({
+        key: hoveredElement?.getAttribute('data-value') || '',
+        align: 'auto',
+      });
+    }
+  }, [hoveredElement, menuItemRender]);
 
   const setFocus = () => {
     if (isDisabled) {
@@ -303,6 +324,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
       selectContainerRef.current?.classList.remove(
         ...(className().focus?.split(' ') || [''])
       );
+      selectContainerRef.current?.classList.add(
+        ...(className().default?.split(' ') || [''])
+      );
     }
   };
 
@@ -318,17 +342,21 @@ const Select = <T, U extends boolean | undefined = undefined>({
         tabIndex={searchable || creatable ? -1 : 0}
         ref={selectContainerRef}
         className={cn(
-          'byte-select byte-relative byte-flex byte-flex-row byte-items-center',
+          'zener-select zener-relative zener-flex zener-flex-row zener-items-center',
           {
-            'byte-text-black/25 byte-bg-black/5 byte-border-stone-100':
+            'zener-text-black/25 zener-bg-black/5 zener-border-stone-100':
               !className && isDisabled,
           },
           className && typeof className === 'function'
-            ? `${className().default} ${isDisabled ? className().disabled : ''}`
+            ? `${isDisabled ? className().disabled : className().default}`
             : className ||
-                'byte-bg-white byte-text-sm byte-px-2 byte-py-0.5 byte-border byte-border-stone-200 byte-rounded byte-min-w-[50px] byte-outline-none focus:byte-ring-1 focus:byte-ring-blue-400 focus-within:byte-ring-1 focus-within:byte-ring-blue-400'
+                ' zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
         )}
-        onClick={() => {
+        onClick={(e) => {
+          if (isDisabled) {
+            e.preventDefault();
+            return;
+          }
           if (!isDisabled) {
             if (show) {
               closeList();
@@ -342,6 +370,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
           }
         }}
         onBlur={(e) => {
+          if (isDisabled) {
+            return;
+          }
           removeFocus();
           if (
             !portalRef?.current?.contains(e.relatedTarget) &&
@@ -352,6 +383,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
           }
         }}
         onFocus={() => {
+          if (isDisabled) {
+            return;
+          }
           setFocus();
         }}
         onKeyDown={(e) => {
@@ -376,11 +410,15 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   optionItem.nextElementSibling.setAttribute('focused', 'true');
                   setHoveredElement(optionItem.nextElementSibling);
 
-                  listRef.current?.scrollTo({
-                    key: optionItem.getAttribute('data-value') || '',
-                    align: 'top',
-                    offset: optionItem.clientHeight,
-                  });
+                  if (!menuItemRender) {
+                    listRef.current?.scrollTo({
+                      key:
+                        optionItem.nextElementSibling?.getAttribute(
+                          'data-value'
+                        ) || '',
+                      align: 'auto',
+                    });
+                  }
                 }
               } else if (key === 'ArrowUp') {
                 if (optionItem.previousElementSibling) {
@@ -390,13 +428,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     'true'
                   );
 
-                  listRef.current?.scrollTo({
-                    key: optionItem.getAttribute('data-value') || '',
-                    align: 'bottom',
-                    offset: optionItem.clientHeight,
-                  });
-
                   setHoveredElement(optionItem.previousElementSibling);
+
+                  if (!menuItemRender) {
+                    listRef.current?.scrollTo({
+                      key:
+                        optionItem.previousElementSibling?.getAttribute(
+                          'data-value'
+                        ) || '',
+                      align: 'auto',
+                    });
+                  }
                 }
               }
             } else {
@@ -419,14 +461,14 @@ const Select = <T, U extends boolean | undefined = undefined>({
       >
         <div
           className={cn(
-            'byte-flex-1 byte-overflow-hidden byte-relative',
-            'byte-flex byte-flex-row byte-gap-0.5 byte-mx-0.5 byte-min-h-[24px]',
+            'zener-flex-1 zener-overflow-hidden zener-relative',
+            'zener-flex zener-flex-row zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px]',
             {
-              'byte-flex-wrap': multiple,
-              'byte-flex-1': !multiple,
-              'byte-cursor-text': (searchable || !!creatable) && !isDisabled,
+              'zener-flex-wrap': multiple,
+              'zener-flex-1': !multiple,
+              'zener-cursor-text': (searchable || !!creatable) && !isDisabled,
             },
-            multiple && selectedOption.length > 0 ? '-byte-ml-1' : ''
+            multiple && selectedOption.length > 0 ? '-zener-ml-1' : ''
           )}
         >
           {/* Tag section for multiple selection mode */}
@@ -435,10 +477,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
             selectedOption.map(
               (so) =>
                 (tagRender &&
-                  tagRender?.props?.children?.({
-                    remove: removeTag,
-                    value: so.value,
+                  tagRender?.({
                     label: so.label,
+                    value: so.value,
+                    remove: removeTag,
                   })) || (
                   <Tag
                     key={so.value}
@@ -452,19 +494,24 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   </Tag>
                 )
             )}
+
+          {/* Single selection value */}
           {!multiple && selectedOption.length > 0 && (
             <div
-              className={cn('byte-flex byte-items-center byte-min-w-0', {
-                'byte-transition-all': show,
-                'byte-hidden': (show || !!inputText) && !open,
+              className={cn('zener-flex zener-items-center zener-min-w-0', {
+                'zener-transition-all': show,
+                'zener-opacity-30': show && !open,
+                'zener-hidden': !!inputText,
               })}
             >
               <div
                 className={cn({
-                  'byte-truncate': !multiple,
+                  'zener-truncate': !multiple,
                 })}
               >
-                {selectedOption[0].label}
+                {valueRender
+                  ? valueRender?.(selectedOption[0] as any)
+                  : selectedOption[0].label}
               </div>
             </div>
           )}
@@ -475,10 +522,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
             'string' ? (
             <div
               className={cn(
-                'byte-text-black/20 byte-absolute byte-left-0 byte-transition-all byte-flex byte-items-center byte-min-h-[24px]',
+                'zener-text-black/20 zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
                 placeholder && !inputText && selectedOption.length === 0
-                  ? 'byte-opacity-100'
-                  : 'byte-opacity-0'
+                  ? 'zener-opacity-100'
+                  : 'zener-opacity-0'
               )}
             >
               {placeholder}
@@ -486,10 +533,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
           ) : (
             <div
               className={cn(
-                'byte-absolute byte-left-0 byte-transition-all byte-flex byte-items-center byte-min-h-[24px]',
+                'zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
                 placeholder && !inputText && selectedOption.length === 0
-                  ? 'byte-opacity-100'
-                  : 'byte-opacity-0'
+                  ? 'zener-opacity-100'
+                  : 'zener-opacity-0'
               )}
             >
               {placeholder}
@@ -500,26 +547,25 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
           {(searchable || creatable) && (
             <div
-              className={cn('byte-max-w-full', {
-                'byte-absolute byte-inset-0 byte-flex-1': !multiple,
+              className={cn('zener-max-w-full', {
+                'zener-absolute zener-inset-0 zener-flex-1': !multiple,
               })}
             >
               <div
                 ref={hiddenTextRef}
-                className="byte-invisible byte-h-0 byte-overflow-hidden byte-w-fit byte-whitespace-pre"
+                className="zener-invisible zener-h-0 zener-overflow-hidden zener-w-fit zener-whitespace-pre"
               >
                 {inputText}
               </div>
               <div
                 style={{
-                  maxWidth: '100%',
                   width: Math.max(
                     4,
                     (hiddenTextRef.current?.clientWidth || 0) + 20
                   ),
                 }}
-                className={cn({
-                  'byte-flex byte-items-center': !multiple,
+                className={cn('zener-max-w-full zener-h-full', {
+                  'zener-flex zener-items-center': !multiple,
                 })}
               >
                 <input
@@ -560,12 +606,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     }
                   }}
                   className={cn(
-                    'byte-outline-none min-w-[4.1px] byte-bg-transparent',
+                    'zener-outline-none min-w-[4.1px] zener-bg-transparent zener-h-full',
                     {
-                      'byte-w-full ': multiple,
+                      'zener-w-full ': multiple,
                     },
                     {
-                      'byte-absolute byte-inset-0':
+                      'zener-absolute zener-inset-0':
                         !multiple && (searchable || !!creatable),
                     }
                   )}
@@ -584,7 +630,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
         {suffix === undefined ? (
           <div
             tabIndex={-1}
-            className="byte-mx-1.5 byte-flex byte-flex-row byte-items-center gap-2 min-h-[24px] byte-opacity-40"
+            className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
           >
             <Loading loading={loading && !show} />
             {showclear && !isDisabled && selectedOption.length > 0 && (
@@ -593,9 +639,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   e.stopPropagation();
                   setSelectedOption([]);
                   inputRef.current?.focus();
+                  closeList();
                 }}
                 tabIndex={-1}
-                className="byte-outline-none byte-opacity-80 hover:byte-opacity-100 byte-transition-all min-h-[24px]"
+                className="zener-outline-none zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
               >
                 <CloseIcon size={16} />
               </button>
@@ -615,8 +662,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
             ref={portalRef}
             tabIndex={-1}
             className={cn(
-              'byte-select react-select-portal byte-pointer-events-auto',
-              portalClass || 'byte-absolute byte-z-[9999999999999999999]'
+              'zener-select react-select-portal zener-pointer-events-auto',
+              portalClass || 'zener-absolute zener-z-[9999999999999999999]'
             )}
             onClick={() => {
               if (!multiple) {
@@ -636,9 +683,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
             <motion.div
               tabIndex={-1}
               className={cn(
-                'relative byte-z-[99999999999999999999] react-select-dialog byte-flex byte-flex-col ',
+                'relative zener-z-[99999999999999999999] react-select-dialog zener-flex zener-flex-col ',
                 menuClass ||
-                  'byte-bg-white byte-rounded-lg byte-p-1 byte-shadow-menu'
+                  'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu'
               )}
               {...(animation ||
                 (animation === null
@@ -660,7 +707,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 itemHeight={30}
                 tabIndex={-1}
                 ref={listRef}
-                className="byte-select"
+                className="zener-select"
               >
                 {(data) => {
                   const { label, value, render, group, groupMode } = data;
@@ -719,14 +766,14 @@ const Select = <T, U extends boolean | undefined = undefined>({
               {filteredOptions.length === 0 &&
                 !loading &&
                 (noOptionMessage || (
-                  <div className="byte-p-2 byte-self-center byte-text-center byte-flex byte-items-center byte-justify-center">
+                  <div className="zener-p-2 zener-self-center zener-text-center zener-flex zener-items-center zener-justify-center">
                     No options
                   </div>
                 ))}
               {loading && (
-                <div className="byte-p-2 byte-flex-col byte-gap-1 byte-self-center byte-text-center byte-flex byte-items-center byte-justify-center">
+                <div className="zener-p-2 zener-flex-col zener-gap-1 zener-self-center zener-text-center zener-flex zener-items-center zener-justify-center">
                   <Loading loading={loading} />
-                  <span className="byte-text-sm">loading</span>
+                  <span className="zener-text-sm">loading</span>
                 </div>
               )}
             </motion.div>

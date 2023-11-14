@@ -78,12 +78,12 @@ const OptionRenderer = forwardRef(
           sibling.removeAttribute('focused');
           sibling
             ?.querySelector('.option-item')
-            ?.classList.remove('byte-bg-gray-400/10');
+            ?.classList.remove('zener-bg-gray-400/10');
         });
         if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
           wrapperRef.current
             ?.querySelector('.option-item')
-            ?.classList.add('byte-bg-gray-400/10');
+            ?.classList.add('zener-bg-gray-400/10');
         }
       }
 
@@ -94,18 +94,16 @@ const OptionRenderer = forwardRef(
     useEffect(() => {
       setIsFocused(!!wrapperRef.current?.hasAttribute('focused'));
 
-      if (typeof render === 'string') {
-        if (wrapperRef.current?.hasAttribute('focused')) {
-          if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
-            wrapperRef.current
-              ?.querySelector('.option-item')
-              ?.classList.add('byte-bg-gray-400/10');
-          }
-        } else {
+      if (wrapperRef.current?.hasAttribute('focused')) {
+        if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
           wrapperRef.current
             ?.querySelector('.option-item')
-            ?.classList.remove('byte-bg-gray-400/10');
+            ?.classList.add('zener-bg-gray-400/10');
         }
+      } else {
+        wrapperRef.current
+          ?.querySelector('.option-item')
+          ?.classList.remove('zener-bg-gray-400/10');
       }
     }, [hoveredElement]);
 
@@ -123,7 +121,7 @@ const OptionRenderer = forwardRef(
         data-active={active}
       >
         {group && (
-          <div className="byte-text-xs byte-text-black/50 byte-py-2 byte-px-2">
+          <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
             {group}
           </div>
         )}
@@ -131,18 +129,13 @@ const OptionRenderer = forwardRef(
           <div
             tabIndex={-1}
             ref={ref}
-            className={cn(
-              'option-item',
-              typeof render === 'string'
-                ? {
-                    'byte-select byte-select-option byte-outline-none byte-cursor-pointer byte-py-2 byte-rounded-lg byte-border-t byte-border-t-white byte-truncate ':
-                      true,
-                    'byte-text-black byte-bg-[#E3E3E3] byte-font-bold': active,
-                    'byte-pr-2 byte-pl-5': groupMode,
-                    'byte-px-2': !groupMode,
-                  }
-                : ''
-            )}
+            className={cn('option-item', {
+              'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-lg zener-border-t zener-border-t-white zener-truncate ':
+                true,
+              'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
+              'zener-pr-2 zener-pl-5': groupMode,
+              'zener-px-2': !groupMode,
+            })}
             onClick={onClick}
             onFocus={onFocus}
             onMouseMove={handleFocus}

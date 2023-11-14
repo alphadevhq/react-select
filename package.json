@@ -1,9 +1,9 @@
 {
-  "name": "react-select-test",
-  "author": "Abdhesh Nayak",
+  "name": "@zener/react-select",
+  "author": "Bikash Ojha",
   "license": "MIT",
-  "version": "0.0.87",
-  "description": "This is a simple react component that can be used to wrap other components and add a pulsing/skeleton effect to them.",
+  "version": "1.0.0",
+  "description": "React select component.",
   "private": false,
   "types": "./dist/@types/index.d.ts",
   "main": "./dist/index.js",
@@ -25,20 +25,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abdheshnayak/react-pulsable.git"
+    "url": "git+https://github.com/tulsiojha/react-select.git"
   },
   "keywords": [
     "react",
-    "pulsable",
-    "skeleton",
-    "pulse",
-    "pulse-effect",
-    "pulse-component",
-    "pulse-skeleton",
-    "skeleton-component",
-    "skeleton-effect",
-    "skeleton-loader",
-    "skeleton-pulse"
+    "select",
+    "control",
+    "form",
+    "options",
+    "combo-box",
+    "ui",
+    "multi-select"
   ],
   "files": [
     "dist",

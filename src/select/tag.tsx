@@ -14,18 +14,18 @@ const Tag = ({ children, disabled, value, onClose = (_) => _ }: ITag) => {
     <div
       tabIndex={-1}
       className={cn(
-        'byte-flex byte-flex-row byte-items-center byte-gap-2 byte-rounded byte-px-2 byte-text-sm byte-h-6 byte-mr-0.5 byte-ml-0 byte-z-10 byte-transition-all',
+        'zener-flex zener-flex-row zener-items-center zener-gap-2 zener-rounded zener-px-2 zener-text-sm zener-h-6 zener-mr-0.5 zener-ml-0 zener-z-10 zener-transition-all zener-truncate',
         {
-          'byte-bg-[#f0f0f0]': !disabled,
-          'byte-bg-black/5': !!disabled,
+          'zener-bg-[#f0f0f0]': !disabled,
+          'zener-bg-black/5': !!disabled,
         }
       )}
     >
-      <span className="byte-line-clamp-1">{children}</span>
+      <span className="zener-truncate">{children}</span>
       <span
         tabIndex={-1}
         className={cn({
-          'byte-cursor-pointer byte-opacity-60 hover:byte-opacity-100':
+          'zener-cursor-pointer zener-opacity-60 hover:zener-opacity-100':
             !disabled,
         })}
         onClick={(e) => {

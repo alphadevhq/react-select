@@ -4,7 +4,7 @@ interface ICloseIcon {
 const CloseIcon = ({ size = 16 }: ICloseIcon) => {
   return (
     <svg
-      className="byte-outline-none"
+      className="zener-outline-none"
       tabIndex={-1}
       focusable="false"
       data-icon="close"
