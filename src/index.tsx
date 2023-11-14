@@ -154,6 +154,8 @@ const _MenuRenderer = ({ label, innerProps, active, focused }: IOptionItem) => {
   );
 };
 
+const _group = [{ label: 'group', options: [{ label: 'hello', value: 'hi' }] }];
+
 root.render(
   <div style={{ width: '200vw', height: '200vh' }}>
     <div style={{ width: '50vw', marginLeft: '300px', marginTop: '300px' }}>

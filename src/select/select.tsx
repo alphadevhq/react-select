@@ -20,10 +20,10 @@ type ISelectedOption<T extends Record<string, any>> =
     }
   | T;
 
-type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>
+type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>[]
   ? U extends true
-    ? T['options'][]
-    : T['options'][number]
+    ? T[number]['options']
+    : T[number]['options'][number]
   : U extends true
   ? IOption[] & T
   : ExtractArrayType<IOption & T>;
