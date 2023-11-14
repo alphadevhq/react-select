@@ -54,8 +54,6 @@
     "tsc": "tsc --emitDeclarationOnly --outDir ./dist/@types",
     "build:css": "tailwindcss -i ./src/scss/build.scss -o ./src/css/index.scss"
   },
-  "dependencies": {
-  },
   "peerDependencies": {
     "@radix-ui/react-portal": "^1.0.4",
     "classnames": "^2.3.2",
@@ -100,5 +98,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/tulsiojha/react-select/issues"
+  },
+  "homepage": "https://github.com/tulsiojha/react-select#readme"
 }
