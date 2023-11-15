@@ -51,7 +51,7 @@
     "pack": "npm run build && npm pack --pack-destination ./out",
     "clean": "rimraf dist",
     "dev:build": "npm run build",
-    "tsc": "tsc --emitDeclarationOnly --outDir ./dist/@types",
+    "tsc": "tsc --emitDeclarationOnly -p tsconfig-compile.json --outDir ./dist/@types",
     "build:css": "tailwindcss -i ./src/scss/build.scss -o ./src/css/index.scss"
   },
   "peerDependencies": {
