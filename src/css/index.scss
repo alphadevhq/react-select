@@ -1,7 +1,4 @@
 .zener-select, .zener-select  * {
-  border-style: solid;
-  border-width: 0px;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   scroll-behavior: unset !important;
 }
 
@@ -265,8 +262,16 @@
   border-width: 1px;
 }
 
+.zener-border-0 {
+  border-width: 0px;
+}
+
 .zener-border-t {
   border-top-width: 1px;
+}
+
+.zener-border-solid {
+  border-style: solid;
 }
 
 .zener-border-stone-100 {
@@ -387,6 +392,10 @@
 
 .zener-text-center {
   text-align: center;
+}
+
+.zener-font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 .zener-text-sm {

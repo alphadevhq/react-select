@@ -194,7 +194,7 @@ root.render(
         // }}
         className={() => {
           const c =
-            'zener-text-sm zener-px-2 zener-py-0.5 zener-border zener-rounded zener-min-w-[50px] zener-outline-none';
+            'zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-font-sans zener-border zener-rounded zener-min-w-[50px] zener-outline-none';
           return {
             default: `${c} zener-border-stone-200`,
             focus: `${c} zener-border-stone-200 zener-ring-1 zener-ring-orange-400`,

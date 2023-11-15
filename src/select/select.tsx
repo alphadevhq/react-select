@@ -209,6 +209,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
       });
     }
     inputRef.current?.focus();
+    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
   }, [show]);
 
   useEffect(() => {
@@ -350,7 +351,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           className && typeof className === 'function'
             ? `${isDisabled ? className().disabled : className().default}`
             : className ||
-                ' zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
+                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
         )}
         onClick={(e) => {
           if (isDisabled) {
@@ -364,9 +365,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
               setShow(true);
             }
             inputRef.current?.focus();
-            setInputBounding(
-              getPosition(selectContainerRef.current as HTMLDivElement)
-            );
           }
         }}
         onBlur={(e) => {
@@ -642,7 +640,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   closeList();
                 }}
                 tabIndex={-1}
-                className="zener-outline-none zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
+                className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
               >
                 <CloseIcon size={16} />
               </button>
@@ -662,8 +660,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
             ref={portalRef}
             tabIndex={-1}
             className={cn(
-              'zener-select react-select-portal zener-pointer-events-auto',
-              portalClass || 'zener-absolute zener-z-[9999999999999999999]'
+              'react-select-portal zener-pointer-events-auto',
+              portalClass ||
+                'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
+              'zener-select'
             )}
             onClick={() => {
               if (!multiple) {
