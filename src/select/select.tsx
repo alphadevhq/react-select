@@ -65,6 +65,7 @@ export interface ISelect<T, U> {
   onChange?: (value: ExtractOptionType<T, U>) => void;
   value: ExtractOptionType<T, U> | undefined;
   valueRender?: (value: ExtractOptionType<T, U>) => ReactNode;
+  groupRender?: ({ label }: { label: string }) => ReactNode;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -99,6 +100,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   placeholder,
   className,
   valueRender,
+  groupRender,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -266,16 +268,18 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   }, [portalRef.current]);
 
+  // get value based on multiple or single selection
+  const getVal = (data: ISelectedOption<IOption>[]) => {
+    return (multiple ? data : data?.[0]) as any;
+  };
+
   const removeTag = (tag: string) => {
-    setSelectedOption(selectedOption.filter((so) => so.value !== tag));
+    const val = getVal(selectedOption.filter((so) => so.value !== tag));
+    setSelectedOption(val);
+    onChange?.(val as any);
     selectContainerRef.current?.focus();
     inputRef.current?.focus();
   };
-
-  useEffect(() => {
-    const val = (multiple ? selectedOption : selectedOption?.[0]) as any;
-    if (val) onChange?.(val);
-  }, [selectedOption]);
 
   const [w, setW] = useState(4);
   useEffect(() => {
@@ -589,9 +593,14 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       multiple &&
                       (searchable || creatable)
                     ) {
-                      setSelectedOption((prev) =>
-                        prev.slice(0, prev.length - 1)
+                      const val = selectedOption.slice(
+                        0,
+                        selectedOption.length - 1
                       );
+
+                      setSelectedOption(val);
+
+                      onChange?.(val as any);
                     }
 
                     if (e.code === 'Space' && e.ctrlKey) {
@@ -637,6 +646,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedOption([]);
+                  onChange?.([] as any);
                   inputRef.current?.focus();
                   closeList();
                 }}
@@ -725,6 +735,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     : value === selectedOption[0]?.value;
                   return (
                     <OptionRenderer
+                      groupRender={groupRender}
                       groupMode={!!groupMode}
                       itemRender={menuItemRender}
                       group={group}
@@ -734,16 +745,21 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       active={isActive}
                       onClick={() => {
                         inputRef.current?.focus();
+                        let val;
                         if (!multiple) {
-                          setSelectedOption([selectValue]);
+                          val = selectValue;
+                          setSelectedOption([val]);
                           closeList();
                         } else if (findElement) {
-                          setSelectedOption(
-                            selectedOption.filter((v) => v.value !== value)
-                          );
+                          val = selectedOption.filter((v) => v.value !== value);
+                          setSelectedOption(val);
                         } else {
-                          setSelectedOption((prev) => [...prev, selectValue]);
+                          setSelectedOption((prev) => {
+                            val = [...prev, selectValue];
+                            return val;
+                          });
                         }
+                        onChange?.(val as any);
                         setInputText('');
                         if (!(searchable || creatable)) {
                           selectContainerRef.current?.focus();

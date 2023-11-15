@@ -40,6 +40,7 @@ interface IOptionRenderer {
   value: string;
   groupMode: boolean;
   itemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
+  groupRender?: ({ label }: { label: string }) => ReactNode;
 }
 
 const OptionRenderer = forwardRef(
@@ -57,6 +58,7 @@ const OptionRenderer = forwardRef(
       group,
       groupMode,
       itemRender: ItemRender,
+      groupRender,
     }: IOptionRenderer,
     ref: any
   ) => {
@@ -120,11 +122,12 @@ const OptionRenderer = forwardRef(
         data-value={value}
         data-active={active}
       >
-        {group && (
-          <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
-            {group}
-          </div>
-        )}
+        {groupRender?.({ label: group || '' }) ||
+          (group && (
+            <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
+              {group}
+            </div>
+          ))}
         {!ItemRender && (
           <div
             tabIndex={-1}

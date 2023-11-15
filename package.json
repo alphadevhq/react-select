@@ -1,8 +1,8 @@
 {
-  "name": "@zener/react-select",
+  "name": "@oshq/react-select",
   "author": "Bikash Ojha",
   "license": "MIT",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "description": "React select component.",
   "private": false,
   "types": "./dist/@types/index.d.ts",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tulsiojha/react-select.git"
+    "url": "git+https://github.com/opensource-hq/react-select.git"
   },
   "keywords": [
     "react",
@@ -48,7 +48,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "npm run clean && npm run build:css && node build.js && npm run tsc",
-    "pack": "npm pack --pack-destination ./out",
+    "pack": "npm run build && npm pack --pack-destination ./out",
     "clean": "rimraf dist",
     "dev:build": "npm run build",
     "tsc": "tsc --emitDeclarationOnly --outDir ./dist/@types",
@@ -100,6 +100,6 @@
     ]
   },
   "bugs": {
-    "url": "https://github.com/tulsiojha/react-select/issues"
+    "url": "https://github.com/opensource-hq/react-select/issues"
   }
 }

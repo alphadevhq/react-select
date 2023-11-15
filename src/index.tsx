@@ -207,6 +207,51 @@ root.render(
         value="helloi"
         className="zener-pt-3 zener-px-4 zener-border zener-mt-3"
       />
+      <Select
+        multiple
+        // searchable
+        // virtual={false}
+        // creatable
+        value={undefined}
+        // value={(await _country())[0]}
+        disableWhileLoading
+        // disabled
+
+        onChange={(x) => {
+          console.log(x);
+        }}
+        // open
+        // disabled
+        // valueRender={({ label, extra }) => (
+        //   <div className="zener-flex zener-flex-row zener-gap-1 zener-items-center zener-truncate">
+        //     <img
+        //       className="zener-w-5 zener-h-5 zener-rounded"
+        //       src={extra.image}
+        //       alt={label}
+        //     />
+        //     <span className="zener-truncate">{label}</span>
+        //   </div>
+        // )}
+        options={_country}
+        placeholder="hello"
+        // tagRender={({ label }) => {
+        //   return (
+        //     <div className="zener-bg-blue-200 zener-rounded zener-p-1 zener-truncate">
+        //       {label}
+        //     </div>
+        //   );
+        // }}
+        className={() => {
+          const c =
+            'zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-font-sans zener-border zener-rounded zener-min-w-[50px] zener-outline-none';
+          return {
+            default: `${c} zener-border-stone-200`,
+            focus: `${c} zener-border-stone-200 zener-ring-1 zener-ring-orange-400`,
+            disabled: `${c} zener-text-black/25 zener-bg-black/5 zener-border-stone-100`,
+          };
+        }}
+        // menuItemRender={_MenuRenderer}
+      />
     </div>
   </div>
 );
