@@ -273,7 +273,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
   };
 
   useEffect(() => {
-    onChange?.((multiple ? selectedOption : selectedOption?.[0]) as any);
+    const val = (multiple ? selectedOption : selectedOption?.[0]) as any;
+    if (val) onChange?.(val);
   }, [selectedOption]);
 
   const [w, setW] = useState(4);

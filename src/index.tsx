@@ -164,7 +164,7 @@ root.render(
         // searchable
         // virtual={false}
         // creatable
-        value={undefined}
+        value={(await _country())[0]}
         disableWhileLoading
         // disabled
 
