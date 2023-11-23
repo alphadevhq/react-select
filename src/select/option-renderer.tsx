@@ -122,7 +122,7 @@ const OptionRenderer = forwardRef(
         data-value={value}
         data-active={active}
       >
-        {groupRender?.({ label: group || '' }) ||
+        {(group && groupRender?.({ label: group || '' })) ||
           (group && (
             <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
               {group}

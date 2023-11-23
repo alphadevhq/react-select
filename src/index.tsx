@@ -9,30 +9,10 @@ const _options = [
     label: 'hello',
     value: 'hi',
     extra: { a: 'a' },
-    render: ({ active, focused }) => (
-      <div
-        className={cn({
-          'zener-bg-red-200': active,
-          'zener-bg-green-200': focused,
-        })}
-      >
-        dog
-      </div>
-    ),
   },
   {
     label: 'apple',
     value: 'apple',
-    render: ({ active, focused }) => (
-      <div
-        className={cn({
-          'zener-bg-red-200': active,
-          'zener-bg-green-200': focused,
-        })}
-      >
-        dog
-      </div>
-    ),
   },
   { label: 'ball', value: 'ball' },
   { label: 'c', value: 'd' },
@@ -110,34 +90,34 @@ const _country = async () => {
   return [...k];
 };
 
-const _v = [
-  {
-    label: 'ball',
-    value: 'ball',
-    extra: {
-      a: 'h',
-      b: 'c',
-    },
-    render: ({ active, focused }) => (
-      <div
-        className={cn({
-          'zener-bg-red-200': active,
-          'zener-bg-green-200': focused,
-        })}
-      >
-        dog
-      </div>
-    ),
-  },
-  {
-    label: 'c',
-    value: 'd',
-    extra: {
-      a: 'h',
-    },
-    render: () => <div>hi</div>,
-  },
-];
+// const _v = [
+//   {
+//     label: 'ball',
+//     value: 'ball',
+//     extra: {
+//       a: 'h',
+//       b: 'c',
+//     },
+//     render: ({ active, focused }) => (
+//       <div
+//         className={cn({
+//           'zener-bg-red-200': active,
+//           'zener-bg-green-200': focused,
+//         })}
+//       >
+//         dog
+//       </div>
+//     ),
+//   },
+//   {
+//     label: 'c',
+//     value: 'd',
+//     extra: {
+//       a: 'h',
+//     },
+//     render: () => <div>hi</div>,
+//   },
+// ];
 
 const _MenuRenderer = ({ label, innerProps, active, focused }: IOptionItem) => {
   return (
@@ -159,50 +139,6 @@ const _group = [{ label: 'group', options: [{ label: 'hello', value: 'hi' }] }];
 root.render(
   <div style={{ width: '200vw', height: '200vh' }}>
     <div style={{ width: '50vw', marginLeft: '300px', marginTop: '300px' }}>
-      <Select
-        // multiple
-        // searchable
-        // virtual={false}
-        // creatable
-        value={(await _country())[0]}
-        disableWhileLoading
-        // disabled
-
-        onChange={(x) => {
-          console.log(x);
-        }}
-        // open
-        // disabled
-        valueRender={({ label, extra }) => (
-          <div className="zener-flex zener-flex-row zener-gap-1 zener-items-center zener-truncate">
-            <img
-              className="zener-w-5 zener-h-5 zener-rounded"
-              src={extra.image}
-              alt={label}
-            />
-            <span className="zener-truncate">{label}</span>
-          </div>
-        )}
-        options={_country}
-        placeholder="hello"
-        // tagRender={({ label }) => {
-        //   return (
-        //     <div className="zener-bg-blue-200 zener-rounded zener-p-1 zener-truncate">
-        //       {label}
-        //     </div>
-        //   );
-        // }}
-        className={() => {
-          const c =
-            'zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-font-sans zener-border zener-rounded zener-min-w-[50px] zener-outline-none';
-          return {
-            default: `${c} zener-border-stone-200`,
-            focus: `${c} zener-border-stone-200 zener-ring-1 zener-ring-orange-400`,
-            disabled: `${c} zener-text-black/25 zener-bg-black/5 zener-border-stone-100`,
-          };
-        }}
-        // menuItemRender={_MenuRenderer}
-      />
       <input
         value="helloi"
         className="zener-pt-3 zener-px-4 zener-border zener-mt-3"
@@ -211,7 +147,7 @@ root.render(
         multiple
         // searchable
         // virtual={false}
-        // creatable
+        creatable
         value={undefined}
         // value={(await _country())[0]}
         disableWhileLoading
@@ -232,7 +168,7 @@ root.render(
         //     <span className="zener-truncate">{label}</span>
         //   </div>
         // )}
-        options={_country}
+        options={async () => _options}
         placeholder="hello"
         // tagRender={({ label }) => {
         //   return (

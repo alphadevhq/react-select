@@ -30,11 +30,24 @@ type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>[]
 
 type ExtractArrayType<T> = T extends (infer U)[] ? U : never;
 
-export type ITagRender = (value: {
+export type ITagRender = {
   remove: (value: string) => void;
   value: string;
   label: string;
-}) => ReactNode;
+};
+
+export type ISuffixRender = {
+  showclear?: boolean;
+  clear?: () => void;
+  isOpen?: boolean;
+  loading?: boolean;
+};
+
+export type IGroupRender = { label: string };
+
+export type IMenuItemRender = IOptionItem;
+
+// type IValue = {label:string, value:string}
 
 export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
@@ -47,15 +60,12 @@ export interface ISelect<T, U> {
   disabled?: boolean;
   searchable?: boolean;
   creatable?: ReactNode;
-  suffix?: ReactNode;
   showclear?: boolean;
-  tagRender?: ITagRender;
-  menuItemRender?: ({
-    label,
-    active,
-    focused,
-    innerProps,
-  }: IOptionItem) => ReactNode;
+  suffixRender?: (value: ISuffixRender) => ReactNode;
+  groupRender?: (value: IGroupRender) => ReactNode;
+  tagRender?: (value: ITagRender) => ReactNode;
+  menuItemRender?: (value: IMenuItemRender) => ReactNode;
+  valueRender?: (value: ExtractOptionType<T, U>) => ReactNode;
   className?:
     | string
     | (() => { focus?: string; disabled?: string; default?: string });
@@ -63,9 +73,11 @@ export interface ISelect<T, U> {
   menuClass?: string;
   animation?: null | AnimationProps;
   onChange?: (value: ExtractOptionType<T, U>) => void;
-  value: ExtractOptionType<T, U> | undefined;
-  valueRender?: (value: ExtractOptionType<T, U>) => ReactNode;
-  groupRender?: ({ label }: { label: string }) => ReactNode;
+  value:
+    | (U extends true
+        ? ISelectedOption<Record<string, any>>[]
+        : { label: string; value: string } & Record<string, any>)
+    | undefined;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -88,7 +100,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   noOptionMessage,
   disableWhileLoading,
   creatable = false,
-  suffix = undefined,
+  suffixRender,
   showclear = true,
   portalClass,
   menuClass,
@@ -342,13 +354,20 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   };
 
+  const onClear = () => {
+    setSelectedOption([]);
+    onChange?.([] as any);
+    inputRef.current?.focus();
+    closeList();
+  };
+
   return (
     <>
       <div
         tabIndex={searchable || creatable ? -1 : 0}
         ref={selectContainerRef}
         className={cn(
-          'zener-select zener-relative zener-flex zener-flex-row zener-items-center',
+          'zener-select zener-relative zener-flex zener-flex-row zener-items-center pulsable',
           {
             'zener-text-black/25 zener-bg-black/5 zener-border-stone-100':
               !className && isDisabled,
@@ -454,6 +473,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
           }
 
           if (key === 'Enter' && show) {
+            e.stopPropagation();
+            e.preventDefault();
             setEnterPressed((prev) => !prev);
           }
 
@@ -614,7 +635,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     }
                   }}
                   className={cn(
-                    'zener-outline-none min-w-[4.1px] zener-bg-transparent zener-h-full',
+                    'zener-outline-none min-w-[4.1px] zener-bg-transparent zener-h-full zener-border-0',
                     {
                       'zener-w-full ': multiple,
                     },
@@ -635,7 +656,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
         {/* Suffix aka clear and dropdown icon */}
 
-        {suffix === undefined ? (
+        {suffixRender?.({
+          clear: onClear,
+          isOpen: show,
+          showclear,
+          loading,
+        }) || (
           <div
             tabIndex={-1}
             className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
@@ -645,10 +671,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedOption([]);
-                  onChange?.([] as any);
-                  inputRef.current?.focus();
-                  closeList();
+                  onClear();
                 }}
                 tabIndex={-1}
                 className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
@@ -658,8 +681,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
             )}
             <DropdownIcon size={18} />
           </div>
-        ) : (
-          suffix
         )}
       </div>
 
@@ -754,12 +775,20 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           val = selectedOption.filter((v) => v.value !== value);
                           setSelectedOption(val);
                         } else {
-                          setSelectedOption((prev) => {
-                            val = [...prev, selectValue];
-                            return val;
-                          });
+                          val = [...selectedOption, selectValue];
+                          setSelectedOption(val);
                         }
+
                         onChange?.(val as any);
+
+                        if (
+                          creatable &&
+                          filteredOptions.length === 1 &&
+                          inputText !== ''
+                        ) {
+                          closeList();
+                        }
+
                         setInputText('');
                         if (!(searchable || creatable)) {
                           selectContainerRef.current?.focus();
@@ -787,7 +816,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     No options
                   </div>
                 ))}
-              {loading && (
+              {loading && filteredOptions.length === 0 && (
                 <div className="zener-p-2 zener-flex-col zener-gap-1 zener-self-center zener-text-center zener-flex zener-items-center zener-justify-center">
                   <Loading loading={loading} />
                   <span className="zener-text-sm">loading</span>
