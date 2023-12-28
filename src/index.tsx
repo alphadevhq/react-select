@@ -1,6 +1,9 @@
-import React from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/no-unstable-nested-components */
 import ReactDOM from 'react-dom/client';
 import ReactDOMS from 'react-dom/server';
+import { useRef, useState } from 'react';
 import { cn } from './select/utils';
 import Select, { IOptionItem } from './select';
 
@@ -44,6 +47,62 @@ const _groupOptions = [
       { label: 'f', value: 'g' },
     ],
   },
+  {
+    label: 'Group 3',
+    options: [
+      { label: 'd', value: 'e1' },
+      { label: 'f', value: 'g1' },
+    ],
+  },
+  {
+    label: 'Group 4',
+    options: [
+      { label: 'd', value: 'e2' },
+      { label: 'f', value: 'g2' },
+    ],
+  },
+  {
+    label: 'Group 5',
+    options: [
+      { label: 'd', value: 'e3' },
+      { label: 'f', value: 'g3' },
+    ],
+  },
+  {
+    label: 'Group 6',
+    options: [
+      { label: 'd', value: 'e4' },
+      { label: 'f', value: 'g4' },
+    ],
+  },
+  {
+    label: 'Group 7',
+    options: [
+      { label: 'd', value: 'e5' },
+      { label: 'f', value: 'g5' },
+    ],
+  },
+  {
+    label: 'Group 8',
+    options: [
+      { label: 'd', value: 'e6' },
+      { label: 'f', value: 'g6' },
+    ],
+  },
+  {
+    label: 'Group 9',
+    options: [
+      { label: 'd', value: 'e7' },
+      { label: 'f', value: 'g7' },
+    ],
+  },
+  {
+    label: 'Group 10',
+    options: [
+      { label: 'd', value: 'e8' },
+      { label: 'f', value: 'g8' },
+    ],
+  },
 ];
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -70,24 +129,25 @@ const _f = async () => {
 };
 
 const _country = async () => {
-  const x = await (
+  const data = await (
     await fetch(
       'https://cdn.jsdelivr.net/npm/country-flag-emoji-json@2.0.0/dist/index.json'
     )
   ).json();
-  const k = mapper(x, (d: any) => ({
-    label: `${d.name}`,
-    value: `${d.code}`,
-    render: () => (
-      <div className="zener-flex zener-flex-row zener-items-center zener-gap-1 zener-truncate">
-        {/* <img src={d.image} alt={d.name} className="zener-w-5 zener-h-5" /> */}
-        <span>{d.emoji}</span>
-        <span className="zener-truncate">{d.name}</span>
-      </div>
-    ),
-    extra: { image: d.image, emoji: d.emoji },
-  }));
-  return [...k];
+
+  return [
+    ...data.map((country: any) => ({
+      label: `${country.name}`,
+      value: `${country.code}`,
+      render: () => (
+        <div className="zener-flex zener-flex-row zener-items-center zener-gap-1 zener-truncate">
+          <span>{country.emoji}</span>
+          <span className="zener-truncate">{country.name}</span>
+        </div>
+      ),
+      country,
+    })),
+  ];
 };
 
 // const _v = [
@@ -136,14 +196,394 @@ const _MenuRenderer = ({ label, innerProps, active, focused }: IOptionItem) => {
 
 const _group = [{ label: 'group', options: [{ label: 'hello', value: 'hi' }] }];
 
-root.render(
-  <div style={{ width: '200vw', height: '200vh' }}>
-    <div style={{ width: '50vw', marginLeft: '300px', marginTop: '300px' }}>
+const App = () => {
+  const ref = useRef(null);
+  // useEffect(() => {
+  //   if (ref.current) {
+  //     const observer = new IntersectionObserver((data) => {
+  //       console.log(data);
+  //     });
+
+  //     observer.observe(ref.current);
+  //     return () => observer.disconnect();
+  //   }
+  //   return () => {};
+  // }, []);
+  return (
+    <div>
       <input
+        ref={ref}
         value="helloi"
         className="zener-pt-3 zener-px-4 zener-border zener-mt-3"
       />
-      <Select
+    </div>
+  );
+};
+
+const Default = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string } | undefined
+  >(undefined);
+  const __options = [
+    {
+      label: 'apple',
+      value: 'apple',
+    },
+    { label: 'ball', value: 'ball' },
+    { label: 'cat', value: 'cat' },
+    { label: 'dog', value: 'dog' },
+  ];
+  return (
+    <Select
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={async () => __options}
+    />
+  );
+};
+
+const Multiselect = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string }[] | undefined
+  >(undefined);
+  const options = [
+    {
+      label: 'apple',
+      value: 'apple',
+    },
+    { label: 'ball', value: 'ball' },
+    { label: 'cat', value: 'cat' },
+    { label: 'dog', value: 'dog' },
+  ];
+  return (
+    <Select
+      multiple
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={async () => options}
+    />
+  );
+};
+
+const Group = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string } | undefined
+  >(undefined);
+  const options = [
+    {
+      label: 'Fruits',
+      options: [
+        { label: 'Apple', value: 'apple' },
+        { label: 'Mango', value: 'mango' },
+      ],
+    },
+    {
+      label: 'Vegetables',
+      options: [
+        { label: 'Potato', value: 'potato' },
+        { label: 'Pumpkin', value: 'pumpkin' },
+      ],
+    },
+    {
+      label: 'Cereal',
+      options: [
+        { label: 'Maize', value: 'maize' },
+        { label: 'rice', value: 'rice' },
+        { label: 'Wheat', value: 'wheat' },
+      ],
+    },
+  ];
+  return (
+    <Select
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={async () => options}
+    />
+  );
+};
+
+const Creatable = () => {
+  const [selected, setSelected] = useState<{ label: string; value: string }[]>(
+    []
+  );
+  const options = [
+    { label: 'apple', value: 'apple' },
+    { label: 'ball', value: 'ball' },
+    { label: 'cat', value: 'cat' },
+    { label: 'dog', value: 'dog' },
+  ];
+  return (
+    <Select
+      creatable
+      multiple
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={async () => options}
+    />
+  );
+};
+
+const Searchable = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string } | undefined
+  >(undefined);
+
+  const options = [
+    {
+      label: 'apple',
+      value: 'apple',
+    },
+    { label: 'ball', value: 'ball' },
+    { label: 'cat', value: 'cat' },
+    { label: 'dog', value: 'dog' },
+  ];
+  return (
+    <Select
+      searchable
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={async () => options}
+      placeholder="searchable"
+    />
+  );
+};
+
+const Asynchronous = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string } | undefined
+  >(undefined);
+
+  const options = async () => {
+    const data = await (
+      await fetch('https://jsonplaceholder.typicode.com/photos')
+    ).json();
+    return [...data.map((res: any) => ({ label: res.title, value: res.id }))];
+  };
+
+  return (
+    <Select
+      searchable
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={options}
+      placeholder="async"
+    />
+  );
+};
+
+const Clearable = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string }[] | undefined
+  >(undefined);
+
+  const options = [
+    {
+      label: 'apple',
+      value: 'apple',
+    },
+    { label: 'ball', value: 'ball' },
+    { label: 'cat', value: 'cat' },
+    { label: 'dog', value: 'dog' },
+  ];
+  return (
+    <Select
+      showclear
+      multiple
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={async () => options}
+      placeholder="clearable"
+    />
+  );
+};
+
+const Customize = () => {
+  const [selected, setSelected] = useState<{ label: string; value: string }[]>(
+    []
+  );
+
+  const ___options = [
+    {
+      label: 'apple',
+      value: 'apple',
+    },
+    { label: 'ball', value: 'ball' },
+    { label: 'cat', value: 'cat' },
+    { label: 'dog', value: 'dog' },
+  ];
+
+  const closeIcon = () => {
+    return (
+      <svg
+        width="12"
+        height="12"
+        strokeWidth="2"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 32 32"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M24 8 8 24M24 24 8 8"
+        />
+      </svg>
+    );
+  };
+
+  const chevronDown = () => {
+    return (
+      <svg
+        width="12"
+        height="12"
+        strokeWidth="2"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 32 32"
+      >
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M26 11 16 21 6 11"
+        />
+      </svg>
+    );
+  };
+
+  return (
+    <Select
+      showclear
+      multiple
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={_f}
+      placeholder={<div className="zener-text-white/50">Customize</div>}
+      className={() => {
+        const custom =
+          'zener-bg-black zener-text-sm zener-text-white zener-px-2 zener-py-0.5 zener-border-solid zener-font-sans zener-border zener-rounded zener-min-w-[50px] zener-outline-none';
+        return {
+          default: `${custom} zener-border-stone-200`,
+          focus: `${custom} zener-border-stone-200 zener-ring-1 zener-ring-orange-400`,
+          disabled: `${custom} zener-text-black/25 zener-bg-black/5 zener-border-stone-100`,
+        };
+      }}
+      suffixRender={({ clear, showclear }) => {
+        return (
+          <div className="zener-flex zener-flex-row zener-items-center zener-gap-1 zener-px-2">
+            {showclear && selected && selected?.length > 0 && (
+              <span
+                className="zener-cursor-pointer hover:zener-opacity-60"
+                onClick={clear}
+              >
+                {closeIcon()}
+              </span>
+            )}
+            <span>{chevronDown()}</span>
+          </div>
+        );
+      }}
+      tagRender={({ label, remove, value }) => {
+        return (
+          <div className="zener-bg-yellow-600 zener-rounded zener-px-1.5 zener-truncate zener-py-0.5 zener-flex zener-flex-row zener-items-center zener-justify-center zener-gap-2">
+            <span className="zener-truncate">{label}</span>
+            <span
+              className="zener-cursor-pointer hover:zener-opacity-60"
+              onClick={() => remove(value)}
+            >
+              {closeIcon()}
+            </span>
+          </div>
+        );
+      }}
+      menuClass="zener-bg-yellow-600 zener-p-1 zener-rounded zener-shadow-2xl"
+      menuItemRender={({ label, innerProps, active, focused }: IOptionItem) => {
+        return (
+          <div className="zener-py-px zener-truncate" {...innerProps}>
+            <div
+              className={cn(
+                'zener-py-2 zener-px-1 zener-rounded zener-truncate',
+                {
+                  'zener-bg-yellow-500': !!active,
+                  'zener-bg-yellow-400': !!focused && !active,
+                }
+              )}
+            >
+              {label}
+            </div>
+          </div>
+        );
+      }}
+      open
+    />
+  );
+};
+
+const Icons = () => {
+  const [selected, setSelected] = useState<
+    { label: string; value: string } | undefined
+  >(undefined);
+
+  return (
+    <Select
+      value={selected}
+      onChange={(value) => {
+        setSelected(value);
+      }}
+      options={_country}
+      placeholder="clearable"
+      valueRender={(value) => (
+        <div className="zener-flex zener-flex-row zener-items-center zener-gap-1">
+          <span>{value.country.emoji}</span>
+          <span>{value.label}</span>
+        </div>
+      )}
+    />
+  );
+};
+
+root.render(
+  <div style={{ width: '200vw', height: '200vh' }}>
+    <div
+      style={{
+        width: '50vw',
+        marginLeft: '300px',
+        marginTop: '300px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+      }}
+    >
+      {/* <Default /> */}
+      {/* <Multiselect /> */}
+      {/* <Group /> */}
+      {/* <Searchable /> */}
+      {/* <Creatable /> */}
+      <Icons />
+      {/* <App />
+      <Asynchronous />
+      <Clearable /> */}
+      {/* <Customize /> */}
+      {/* <Select
         multiple
         // searchable
         // virtual={false}
@@ -168,7 +608,7 @@ root.render(
         //     <span className="zener-truncate">{label}</span>
         //   </div>
         // )}
-        options={async () => _options}
+        options={async () => _groupOptions}
         placeholder="hello"
         // tagRender={({ label }) => {
         //   return (
@@ -187,7 +627,7 @@ root.render(
           };
         }}
         // menuItemRender={_MenuRenderer}
-      />
+      /> */}
     </div>
   </div>
 );

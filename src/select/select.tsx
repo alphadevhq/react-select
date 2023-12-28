@@ -59,7 +59,7 @@ export interface ISelect<T, U> {
   open?: boolean | undefined;
   disabled?: boolean;
   searchable?: boolean;
-  creatable?: ReactNode;
+  creatable?: boolean;
   showclear?: boolean;
   suffixRender?: (value: ISuffixRender) => ReactNode;
   groupRender?: (value: IGroupRender) => ReactNode;
@@ -78,6 +78,7 @@ export interface ISelect<T, U> {
         ? ISelectedOption<Record<string, any>>[]
         : { label: string; value: string } & Record<string, any>)
     | undefined;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -101,7 +102,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   disableWhileLoading,
   creatable = false,
   suffixRender,
-  showclear = true,
+  showclear = false,
   portalClass,
   menuClass,
   tagRender,
@@ -113,6 +114,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   className,
   valueRender,
   groupRender,
+  onOpenChange,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -154,11 +156,22 @@ const Select = <T, U extends boolean | undefined = undefined>({
     if (value && flatOptions.length > 0) {
       let filteredArray = [];
       if (Array.isArray(value) && multiple) {
-        filteredArray = flatOptions.filter((fo) =>
-          value.find((v) => v?.value === fo.value)
-        );
+        if (creatable) {
+          filteredArray = value.map((v) => {
+            const f = flatOptions.find((fo) => fo.value === v.value);
+            if (f) {
+              return f;
+            }
+            return { ...v };
+          }) as typeof flatOptions;
+          setSelectedOption(filteredArray);
+        } else {
+          filteredArray = flatOptions.filter((fo) =>
+            value.find((v) => v?.value === fo.value)
+          );
 
-        setSelectedOption(filteredArray);
+          setSelectedOption(filteredArray);
+        }
       } else {
         const v = value;
         // @ts-ignore
@@ -224,6 +237,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
     inputRef.current?.focus();
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
+    onOpenChange?.(show);
   }, [show]);
 
   useEffect(() => {
@@ -251,19 +265,23 @@ const Select = <T, U extends boolean | undefined = undefined>({
   }, [options]);
 
   useEffect(() => {
-    const filtered = flatOptions.filter((fot) =>
-      fot.label.toLowerCase().includes(inputText.toLowerCase())
-    );
-    if (
-      filtered.length === 0 &&
-      creatable &&
-      multiple &&
-      inputText &&
-      !loading
-    ) {
-      filtered.push({ label: inputText, value: inputText });
+    try {
+      const filtered = flatOptions.filter((fot) => {
+        return fot.label?.toLowerCase().includes(inputText?.toLowerCase());
+      });
+      if (
+        filtered.length === 0 &&
+        creatable &&
+        multiple &&
+        inputText &&
+        !loading
+      ) {
+        filtered.push({ label: inputText, value: inputText });
+      }
+      setFilteredOptions(filtered);
+    } catch (err) {
+      console.log(err);
     }
-    setFilteredOptions(filtered);
   }, [inputText, flatOptions, creatable]);
 
   useEffect(() => {
@@ -375,7 +393,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           className && typeof className === 'function'
             ? `${isDisabled ? className().disabled : className().default}`
             : className ||
-                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
+                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
         )}
         onClick={(e) => {
           if (isDisabled) {

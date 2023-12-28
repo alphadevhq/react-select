@@ -12,6 +12,7 @@ import { cn } from './utils';
 export type IOptionRender =
   | string
   | (({ active, focused }: { active: boolean; focused: boolean }) => ReactNode);
+
 export type IOptionItem = {
   active?: boolean;
   focused?: boolean;
@@ -122,51 +123,52 @@ const OptionRenderer = forwardRef(
         data-value={value}
         data-active={active}
       >
-        {(group && groupRender?.({ label: group || '' })) ||
-          (group && (
-            <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
-              {group}
+        <div ref={ref} tabIndex={-1}>
+          {(group && groupRender?.({ label: group || '' })) ||
+            (group && (
+              <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
+                {group}
+              </div>
+            ))}
+          {!ItemRender && (
+            <div
+              tabIndex={-1}
+              className={cn('option-item', {
+                'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-lg zener-border-t zener-border-t-white zener-truncate ':
+                  true,
+                'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
+                'zener-pr-2 zener-pl-5': groupMode,
+                'zener-px-2': !groupMode,
+              })}
+              onClick={onClick}
+              onFocus={onFocus}
+              onMouseMove={handleFocus}
+            >
+              {typeof render === 'string'
+                ? render
+                : render?.({ active, focused: isFocused })}
             </div>
-          ))}
-        {!ItemRender && (
-          <div
-            tabIndex={-1}
-            ref={ref}
-            className={cn('option-item', {
-              'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-lg zener-border-t zener-border-t-white zener-truncate ':
-                true,
-              'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
-              'zener-pr-2 zener-pl-5': groupMode,
-              'zener-px-2': !groupMode,
-            })}
-            onClick={onClick}
-            onFocus={onFocus}
-            onMouseMove={handleFocus}
-          >
-            {typeof render === 'string'
-              ? render
-              : render?.({ active, focused: isFocused })}
-          </div>
-        )}
-        {ItemRender && (
-          <ItemRender
-            {...{
-              render,
-              active,
-              label,
-              value,
-              focused: isFocused,
-              innerProps: {
-                onClick,
-                onMouseMove: handleFocus,
-                group,
-                onFocus,
-                tabIndex: -1,
-                ref,
-              },
-            }}
-          />
-        )}
+          )}
+          {ItemRender && (
+            <ItemRender
+              {...{
+                render,
+                active,
+                label,
+                value,
+                focused: isFocused,
+                innerProps: {
+                  onClick,
+                  onMouseMove: handleFocus,
+                  group,
+                  onFocus,
+                  tabIndex: -1,
+                  ref,
+                },
+              }}
+            />
+          )}
+        </div>
       </div>
     );
   }
