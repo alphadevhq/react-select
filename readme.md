@@ -298,7 +298,7 @@ const App = () => {
       
       menuClass="bg-yellow-600 p-1 rounded shadow-2xl"
       
-      menuItemRender={({ label, innerProps, active, focused }: IOptionItem) => {
+      menuItemRender={({ label, innerProps, active, focused }) => {
         return (
           <div className="py-px truncate" {...innerProps}>
             <div
@@ -335,9 +335,9 @@ const countries = async () => {
       label: `${country.name}`,
       value: `${country.code}`,
       render: () => (
-        <div className="zener-flex zener-flex-row zener-items-center zener-gap-1 zener-truncate">
+        <div className="flex flex-row items-center gap-1 truncate">
           <span>{country.emoji}</span>
-          <span className="zener-truncate">{country.name}</span>
+          <span className="truncate">{country.name}</span>
         </div>
       ),
       country,
@@ -357,7 +357,7 @@ const App = () => {
       options={countries}
       placeholder="clearable"
       valueRender={(value) => (
-        <div className="zener-flex zener-flex-row zener-items-center zener-gap-1">
+        <div className="flex flex-row items-center gap-1">
           <span>{value.image}</span>
           <span>{value.label}</span>
         </div>
