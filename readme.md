@@ -331,7 +331,7 @@ const countries = async () => {
   ).json();
 
   return [
-    ...data.map((country: any) => ({
+    ...data.map((country) => ({
       label: `${country.name}`,
       value: `${country.code}`,
       render: () => (
@@ -355,10 +355,9 @@ const App = () => {
         setSelected(value);
       }}
       options={countries}
-      placeholder="clearable"
       valueRender={(value) => (
         <div className="flex flex-row items-center gap-1">
-          <span>{value.image}</span>
+          <span>{value.country.emoji}</span>
           <span>{value.label}</span>
         </div>
       )}
