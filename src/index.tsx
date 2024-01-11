@@ -3,7 +3,7 @@
 /* eslint-disable react/no-unstable-nested-components */
 import ReactDOM from 'react-dom/client';
 import ReactDOMS from 'react-dom/server';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from './select/utils';
 import Select, { IOptionItem } from './select';
 
@@ -247,7 +247,7 @@ const Default = () => {
 const Multiselect = () => {
   const [selected, setSelected] = useState<
     { label: string; value: string }[] | undefined
-  >(undefined);
+  >([{ label: 'apple', value: 'apple' }]);
   const options = [
     {
       label: 'apple',
@@ -260,7 +260,9 @@ const Multiselect = () => {
   return (
     <Select
       multiple
-      value={selected}
+      value={[
+        ...(selected?.map((s) => ({ label: s.label, value: s.value })) || []),
+      ]}
       onChange={(value) => {
         setSelected(value);
       }}
@@ -309,9 +311,9 @@ const Group = () => {
 };
 
 const Creatable = () => {
-  const [selected, setSelected] = useState<{ label: string; value: string }[]>(
-    []
-  );
+  const [selected, setSelected] = useState<
+    { label: string; value: string } | undefined
+  >({ label: 'hi', value: 'hi' });
   const options = [
     { label: 'apple', value: 'apple' },
     { label: 'ball', value: 'ball' },
@@ -321,7 +323,6 @@ const Creatable = () => {
   return (
     <Select
       creatable
-      multiple
       value={selected}
       onChange={(value) => {
         setSelected(value);
@@ -335,6 +336,7 @@ const Searchable = () => {
   const [selected, setSelected] = useState<
     { label: string; value: string } | undefined
   >(undefined);
+  // const [options, setOptions] = useState([]);
 
   const options = [
     {
@@ -345,15 +347,24 @@ const Searchable = () => {
     { label: 'cat', value: 'cat' },
     { label: 'dog', value: 'dog' },
   ];
+
+  useEffect(() => {
+    console.log(selected);
+  }, [selected]);
   return (
     <Select
-      searchable
       value={selected}
       onChange={(value) => {
         setSelected(value);
       }}
       options={async () => options}
       placeholder="searchable"
+      searchable
+      open
+      onSearch={(t) => {
+        console.log(t);
+        return true;
+      }}
     />
   );
 };
@@ -372,7 +383,6 @@ const Asynchronous = () => {
 
   return (
     <Select
-      searchable
       value={selected}
       onChange={(value) => {
         setSelected(value);
@@ -573,13 +583,14 @@ root.render(
         gap: '20px',
       }}
     >
+      <App />
       {/* <Default /> */}
-      {/* <Multiselect /> */}
+      <Multiselect />
       {/* <Group /> */}
       {/* <Searchable /> */}
       {/* <Creatable /> */}
-      <Icons />
-      {/* <App />
+      {/* <Icons /> */}
+      {/* 
       <Asynchronous />
       <Clearable /> */}
       {/* <Customize /> */}
