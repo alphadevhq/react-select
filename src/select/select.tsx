@@ -155,6 +155,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const [filterable, setFilterable] = useState(false);
 
   const hiddenTextRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!value) {
       setSelectedOption([]);
@@ -708,6 +709,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             <Loading loading={loading && !show} />
             {showclear && !isDisabled && selectedOption.length > 0 && (
               <button
+                aria-label="clear"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClear();
@@ -808,14 +810,14 @@ const Select = <T, U extends boolean | undefined = undefined>({
                         let val;
                         if (!multiple) {
                           val = selectValue;
-                          setSelectedOption([val]);
+                          // setSelectedOption([val]);
                           closeList();
                         } else if (findElement) {
                           val = selectedOption.filter((v) => v.value !== value);
-                          setSelectedOption(val);
+                          // setSelectedOption(val);
                         } else {
                           val = [...selectedOption, selectValue];
-                          setSelectedOption(val);
+                          // setSelectedOption(val);
                         }
 
                         onChange?.(val as any);

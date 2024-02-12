@@ -132,6 +132,7 @@ const App = () => {
   return (
     <Select
       searchable
+      onSearch={() => true} // in order to enable built-in search `searchable` should be `true` and `onSearch` should return `true`. if you want custom search logic, return `false` in `onSearch` instead and apply your business logic inside it.
       value={selected}
       onChange={(value) => {
         setSelected(value);
@@ -387,7 +388,7 @@ This feature empowers you to tailor each option item according to your preferenc
 
 #### `value`
 
--   **Type**: `(label:string, value:string, ...) | (label:string, options:{label:string, value:string, ...}[]) | array_of_previous | undefined`
+-   **Type**: `(label:string, value:string, ...) | (label:string, options:{label:string, value:string, ...}[]) | array_of_items | undefined`
 -   **Description**: Represents the current value(s) of the Select component. It should be object or array (multiple selection) of `label` and `value`.
 
 #### `virtual?`
@@ -502,6 +503,11 @@ This feature empowers you to tailor each option item according to your preferenc
 
 -   **Type**: `(open: boolean) => void`
 -   **Description**: Triggered when the dropdown menu opens or closes.
+
+#### `onSearch?`
+
+-   **Type**: `(text: string) => void | boolean`
+-   **Description**: Triggers when typing. If true is returned then it uses in-build filtering.
 
 ## Types
 ```ts
