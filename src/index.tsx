@@ -237,7 +237,6 @@ const Default = () => {
     <Select
       value={selected}
       searchable
-      onSearch={() => true} // in order to enable in-built search `searchable` should be `true` and `onSearch` should return `true`. if you want custom search logic, return `false` in `onSearch` instead
       onChange={(value) => {
         setSelected(value);
       }}
@@ -261,7 +260,13 @@ const Multiselect = () => {
   ];
   return (
     <Select
+      creatable
       multiple
+      searchable
+      onSearch={(e) => {
+        console.log(e);
+        return false;
+      }}
       value={[
         ...(selected?.map((s) => ({ label: s.label, value: s.value })) || []),
       ]}
@@ -586,11 +591,11 @@ root.render(
       }}
     >
       <App />
-      <Default />
-      {/* <Multiselect /> */}
+      {/* <Default /> */}
+      <Multiselect />
       {/* <Group /> */}
       {/* <Searchable /> */}
-      {/* <Creatable /> */}
+      <Creatable />
       {/* <Icons /> */}
       {/* 
       <Asynchronous />

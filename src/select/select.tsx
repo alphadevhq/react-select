@@ -152,7 +152,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   const [enterPressed, setEnterPressed] = useState(false);
   const [focusedElement, setFocusedElement] = useState('');
-  const [filterable, setFilterable] = useState(false);
+  const [filterable, setFilterable] = useState(searchable);
 
   const hiddenTextRef = useRef<HTMLDivElement>(null);
 
@@ -189,7 +189,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
         if (creatable) {
           // @ts-ignore
           setSelectedOption([value]);
-          console.log('select - value:', value);
         } else {
           // @ts-ignore
           const f = flatOptions.find((fo) => fo.value === v?.value);
@@ -401,7 +400,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   return (
     <>
       <div
-        tabIndex={filterable || searchable || creatable ? -1 : 0}
+        tabIndex={searchable || creatable ? -1 : 0}
         ref={selectContainerRef}
         className={cn(
           'zener-select zener-relative zener-flex zener-flex-row zener-items-center pulsable',
@@ -527,8 +526,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             {
               'zener-flex-wrap': multiple,
               'zener-flex-1': !multiple,
-              'zener-cursor-text':
-                (filterable || searchable || !!creatable) && !isDisabled,
+              'zener-cursor-text': (searchable || !!creatable) && !isDisabled,
             },
             multiple && selectedOption.length > 0 ? '-zener-ml-1' : ''
           )}
@@ -564,7 +562,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 'zener-transition-all': show,
                 'zener-opacity-30': show && !open,
                 'zener-hidden': !!inputText,
-                'zener-w-full': !(searchable || creatable || filterable),
+                'zener-w-full': !(creatable || searchable),
               })}
             >
               <div
@@ -608,7 +606,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
           {/* Input field for filterable or creatable mode */}
 
-          {(filterable || searchable || creatable) && (
+          {(searchable || creatable) && (
             <div
               className={cn('zener-max-w-full', {
                 'zener-absolute zener-inset-0 zener-flex-1': !multiple,
@@ -651,7 +649,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       !inputText &&
                       key === 'Backspace' &&
                       multiple &&
-                      (filterable || searchable || creatable)
+                      (searchable || creatable)
                     ) {
                       const val = selectedOption.slice(
                         0,
@@ -680,13 +678,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     },
                     {
                       'zener-absolute zener-inset-0':
-                        !multiple && (filterable || searchable || !!creatable),
+                        !multiple && (searchable || !!creatable),
                     }
                   )}
                   value={inputText}
                   onChange={({ target }) => {
                     setInputText(target.value);
-                    setFilterable(onSearch?.(target.value) || false);
+                    if (!searchable) {
+                      setFilterable(false);
+                    } else {
+                      setFilterable(onSearch?.(target.value) !== false);
+                    }
                   }}
                 />
               </div>
