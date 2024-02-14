@@ -812,14 +812,20 @@ const Select = <T, U extends boolean | undefined = undefined>({
                         let val;
                         if (!multiple) {
                           val = selectValue;
-                          // setSelectedOption([val]);
+                          if (creatable) {
+                            setSelectedOption([val]);
+                          }
                           closeList();
                         } else if (findElement) {
                           val = selectedOption.filter((v) => v.value !== value);
-                          // setSelectedOption(val);
+                          if (creatable) {
+                            setSelectedOption(val);
+                          }
                         } else {
                           val = [...selectedOption, selectValue];
-                          // setSelectedOption(val);
+                          if (creatable) {
+                            setSelectedOption(val);
+                          }
                         }
 
                         onChange?.(val as any);
