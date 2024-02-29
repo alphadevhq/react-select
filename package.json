@@ -2,7 +2,7 @@
   "name": "@oshq/react-select",
   "author": "Bikash Ojha",
   "license": "MIT",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "description": "The React Select is a minimal select component for reactjs.",
   "private": false,
   "types": "./dist/@types/index.d.ts",

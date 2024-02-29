@@ -41,8 +41,8 @@ const App = () => {
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={async () => options}
     />
@@ -68,8 +68,8 @@ const App = () => {
     <Select
       multiple
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={async () => options}
     />
@@ -109,8 +109,8 @@ const App = () => {
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={async () => options}
     />
@@ -133,8 +133,8 @@ const App = () => {
     <Select
       searchable
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={async () => options}
     />
@@ -158,8 +158,8 @@ const App = () => {
       creatable
       multiple
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={async () => options}
     />
@@ -185,8 +185,8 @@ const App = () => {
     <Select
       searchable
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={options}
     />
@@ -252,8 +252,8 @@ const App = () => {
       showclear
       multiple
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={async ()=> options}
       
@@ -351,8 +351,8 @@ const App = () => {
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_,val) => {
+        setSelected(val);
       }}
       options={countries}
       valueRender={(value) => (
@@ -387,8 +387,8 @@ This feature empowers you to tailor each option item according to your preferenc
 
 #### `value`
 
--   **Type**: `(label:string, value:string, ...) | (label:string, options:{label:string, value:string, ...}[]) | array_of_items | undefined`
--   **Description**: Represents the current value(s) of the Select component. It should be object or array (multiple selection) of `label` and `value`.
+-   **Type**: `string | string[]`
+-   **Description**: Represents the current value(s) of the Select component. It should be string or array of string.
 
 #### `virtual?`
 
@@ -433,7 +433,7 @@ This feature empowers you to tailor each option item according to your preferenc
 #### `searchable?`
 
 -   **Type**: `boolean`
--   **Default**: `false`
+-   **Default**: `true`
 -   **Description**: Enables a search feature within the Select component to quickly find options.
 
 #### `creatable?`
@@ -495,7 +495,7 @@ This feature empowers you to tailor each option item according to your preferenc
 
 #### `onChange?`
 
--   **Type**: `(value:type_of_item) => void`
+-   **Type**: `(value:object, valueAsString:string) => void`
 -   **Description**: Triggered upon changes to the selected value(s).
 
 #### `onOpenChange?`
