@@ -154,7 +154,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const [filterable, setFilterable] = useState(searchable);
 
   const hiddenTextRef = useRef<HTMLDivElement>(null);
-  const currentItemPositionRef = useRef<number[]>([]);
+  const currentItemPositionRef = useRef<number>(0);
 
   useEffect(() => {
     if (!value) {
@@ -245,24 +245,16 @@ const Select = <T, U extends boolean | undefined = undefined>({
   useEffect(() => {
     if (!show) {
       setInputText('');
-      currentItemPositionRef.current = currentItemPositionRef.current.splice(
-        0,
-        1
-      );
     }
     if (show) {
       makeItemActive();
       listRef.current?.scrollTo({
-        index:
-          currentItemPositionRef.current.length > 0
-            ? currentItemPositionRef.current[0]
-            : 0,
+        index: currentItemPositionRef.current,
         align: 'top',
       });
       inputRef.current?.focus();
     }
 
-    console.log(currentItemPositionRef.current);
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
     onOpenChange?.(show);
   }, [show]);
@@ -338,11 +330,18 @@ const Select = <T, U extends boolean | undefined = undefined>({
     onChange?.(val as any, val?.map((v) => v.value) || ([] as any));
     selectContainerRef.current?.focus();
     inputRef.current?.focus();
+
+    if (Array.isArray(val) && val.length > 0) scrollToSelected(val?.[0].value);
+    else currentItemPositionRef.current = 0;
   };
 
   const [w, setW] = useState(4);
   useEffect(() => {
     setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0));
+    listRef.current?.scrollTo({
+      index: 0,
+      align: 'top',
+    });
   }, [inputText]);
 
   useEffect(() => {
@@ -406,6 +405,18 @@ const Select = <T, U extends boolean | undefined = undefined>({
     onChange?.([] as any, [] as any);
     inputRef.current?.focus();
     closeList();
+    currentItemPositionRef.current = 0;
+  };
+
+  const scrollToSelected = (val: string) => {
+    let currentIndex = currentItemPositionRef.current;
+    // @ts-ignore
+    currentIndex = flatOptions.findIndex(
+      (fo) =>
+        // @ts-ignore
+        fo.value === val
+    );
+    currentItemPositionRef.current = currentIndex;
   };
 
   return (
@@ -805,9 +816,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   const findElement = selectedOption.find(
                     (so) => so.value === value
                   );
-                  const currentIndex = flatOptions.findIndex(
-                    (fo) => fo.value === value
-                  );
 
                   const isActive = multiple
                     ? !!findElement
@@ -824,7 +832,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       active={isActive}
                       onClick={() => {
                         inputRef.current?.focus();
+                        // @ts-ignore
                         let val;
+
                         if (!multiple) {
                           val = selectValue;
                           if (creatable) {
@@ -854,8 +864,16 @@ const Select = <T, U extends boolean | undefined = undefined>({
                               val?.value) as any
                         );
 
-                        currentItemPositionRef.current.push(currentIndex);
+                        // for auto scrolling to first selected element
 
+                        scrollToSelected(
+                          // @ts-ignore
+                          multiple && val.length > 0
+                            ? // @ts-ignore
+                              val[0]?.value
+                            : // @ts-ignore
+                              val.value
+                        );
                         if (
                           creatable &&
                           filteredOptions.length === 1 &&
