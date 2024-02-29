@@ -116,7 +116,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   groupRender,
   onOpenChange,
   onSearch,
-  searchable,
+  searchable = true,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);

@@ -577,9 +577,9 @@ root.render(
       {/* <Searchable /> */}
       <Creatable />
       {/* <Icons /> */}
-      {/* 
+
       <Asynchronous />
-      <Clearable /> */}
+      {/* <Clearable /> */}
       {/* <Customize /> */}
       {/* <Select
         multiple
