@@ -221,9 +221,7 @@ const App = () => {
 };
 
 const Default = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string } | undefined
-  >(undefined);
+  const [selected, setSelected] = useState<string | undefined>(undefined);
   const __options = [
     {
       label: 'apple',
@@ -236,9 +234,8 @@ const Default = () => {
   return (
     <Select
       value={selected}
-      searchable
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(_, v) => {
+        setSelected(v);
       }}
       options={async () => __options}
     />
@@ -246,9 +243,7 @@ const Default = () => {
 };
 
 const Multiselect = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string }[] | undefined
-  >([{ label: 'apple', value: 'apple' }]);
+  const [selected, setSelected] = useState<string[] | undefined>(['apple']);
   const options = [
     {
       label: 'apple',
@@ -264,14 +259,12 @@ const Multiselect = () => {
       multiple
       searchable
       onSearch={(e) => {
-        console.log(e);
         return false;
       }}
-      value={[
-        ...(selected?.map((s) => ({ label: s.label, value: s.value })) || []),
-      ]}
-      onChange={(value) => {
-        setSelected(value);
+      value={selected}
+      onChange={(_res, v) => {
+        setSelected(v);
+        console.log(v);
       }}
       options={async () => options}
     />
@@ -279,9 +272,7 @@ const Multiselect = () => {
 };
 
 const Group = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string } | undefined
-  >(undefined);
+  const [selected, setSelected] = useState<string | undefined>(undefined);
   const options = [
     {
       label: 'Fruits',
@@ -309,8 +300,8 @@ const Group = () => {
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res) => {
+        setSelected(res.value);
       }}
       options={async () => options}
     />
@@ -318,9 +309,7 @@ const Group = () => {
 };
 
 const Creatable = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string } | undefined
-  >({ label: 'hi', value: 'hi' });
+  const [selected, setSelected] = useState<string | undefined>('apple');
   const options = [
     { label: 'apple', value: 'apple' },
     { label: 'ball', value: 'ball' },
@@ -331,8 +320,9 @@ const Creatable = () => {
     <Select
       creatable
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res, v) => {
+        setSelected(res.value);
+        console.log(v);
       }}
       options={async () => options}
     />
@@ -340,9 +330,7 @@ const Creatable = () => {
 };
 
 const Searchable = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string } | undefined
-  >(undefined);
+  const [selected, setSelected] = useState<string | undefined>(undefined);
   // const [options, setOptions] = useState([]);
 
   const options = [
@@ -361,8 +349,8 @@ const Searchable = () => {
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res) => {
+        setSelected(res.value);
       }}
       options={async () => options}
       placeholder="searchable"
@@ -377,9 +365,7 @@ const Searchable = () => {
 };
 
 const Asynchronous = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string } | undefined
-  >(undefined);
+  const [selected, setSelected] = useState<string | undefined>(undefined);
 
   const options = async () => {
     const data = await (
@@ -391,8 +377,8 @@ const Asynchronous = () => {
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res) => {
+        setSelected(res.value);
       }}
       options={options}
       placeholder="async"
@@ -401,9 +387,7 @@ const Asynchronous = () => {
 };
 
 const Clearable = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string }[] | undefined
-  >(undefined);
+  const [selected, setSelected] = useState<string[] | undefined>(undefined);
 
   const options = [
     {
@@ -419,8 +403,8 @@ const Clearable = () => {
       showclear
       multiple
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res) => {
+        setSelected(res.map((r) => r.value));
       }}
       options={async () => options}
       placeholder="clearable"
@@ -429,9 +413,7 @@ const Clearable = () => {
 };
 
 const Customize = () => {
-  const [selected, setSelected] = useState<{ label: string; value: string }[]>(
-    []
-  );
+  const [selected, setSelected] = useState<string[]>([]);
 
   const ___options = [
     {
@@ -490,8 +472,8 @@ const Customize = () => {
       showclear
       multiple
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res) => {
+        setSelected(res.map((r) => r.value));
       }}
       options={_f}
       placeholder={<div className="zener-text-white/50">Customize</div>}
@@ -556,15 +538,13 @@ const Customize = () => {
 };
 
 const Icons = () => {
-  const [selected, setSelected] = useState<
-    { label: string; value: string } | undefined
-  >(undefined);
+  const [selected, setSelected] = useState<string | undefined>(undefined);
 
   return (
     <Select
       value={selected}
-      onChange={(value) => {
-        setSelected(value);
+      onChange={(res) => {
+        setSelected(res.value);
       }}
       options={_country}
       placeholder="clearable"
@@ -591,7 +571,7 @@ root.render(
       }}
     >
       <App />
-      {/* <Default /> */}
+      <Default />
       <Multiselect />
       {/* <Group /> */}
       {/* <Searchable /> */}

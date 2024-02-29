@@ -74,12 +74,11 @@ export interface ISelect<T, U> {
   portalClass?: string;
   menuClass?: string;
   animation?: null | AnimationProps;
-  onChange?: (value: ExtractOptionType<T, U>) => void;
-  value:
-    | (U extends true
-        ? ISelectedOption<Record<string, any>>[]
-        : { label: string; value: string } & Record<string, any>)
-    | undefined;
+  onChange?: (
+    value: ExtractOptionType<T, U>,
+    valueAsString: U extends true ? string[] : string
+  ) => void;
+  value: (U extends true ? string[] : string) | undefined;
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -166,16 +165,16 @@ const Select = <T, U extends boolean | undefined = undefined>({
       if (Array.isArray(value) && multiple) {
         if (creatable) {
           filteredArray = value.map((v) => {
-            const f = flatOptions.find((fo) => fo.value === v.value);
+            const f = flatOptions.find((fo) => fo.value === v);
             if (f) {
               return f;
             }
-            return { ...v };
+            return { label: v, value: v };
           }) as typeof flatOptions;
           setSelectedOption(filteredArray);
         } else {
           filteredArray = flatOptions.filter((fo) =>
-            value.find((v) => v?.value === fo.value)
+            value.find((v) => v === fo.value)
           );
           setSelectedOption(filteredArray);
         }
@@ -188,10 +187,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
         // @ts-ignore
         if (creatable) {
           // @ts-ignore
-          setSelectedOption([value]);
+          setSelectedOption([{ label: value, value }]);
         } else {
           // @ts-ignore
-          const f = flatOptions.find((fo) => fo.value === v?.value);
+          const f = flatOptions.find((fo) => fo.value === v);
           if (f) {
             filteredArray = [f];
             if (filteredArray.length > 0) {
@@ -251,8 +250,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
       listRef.current?.scrollTo({
         index: 0,
       });
+      inputRef.current?.focus();
     }
-    inputRef.current?.focus();
+
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
     onOpenChange?.(show);
   }, [show]);
@@ -324,7 +324,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const removeTag = (tag: string) => {
     const val = getVal(selectedOption.filter((so) => so.value !== tag));
     setSelectedOption(val);
-    onChange?.(val as any);
+    // @ts-ignore
+    onChange?.(val as any, val?.map((v) => v.value) || ([] as any));
     selectContainerRef.current?.focus();
     inputRef.current?.focus();
   };
@@ -392,7 +393,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   const onClear = () => {
     setSelectedOption([]);
-    onChange?.([] as any);
+    onChange?.([] as any, [] as any);
     inputRef.current?.focus();
     closeList();
   };
@@ -658,7 +659,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
                       setSelectedOption(val);
 
-                      onChange?.(val as any);
+                      onChange?.(val as any, val.map((v) => v.value) as any);
                     }
 
                     if (e.code === 'Space' && e.ctrlKey) {
@@ -828,7 +829,16 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           }
                         }
 
-                        onChange?.(val as any);
+                        onChange?.(
+                          val as any,
+                          // @ts-ignore
+                          (multiple
+                            ? // @ts-ignore
+
+                              val?.map((v) => v.value)
+                            : // @ts-ignore
+                              val?.value) as any
+                        );
 
                         if (
                           creatable &&
