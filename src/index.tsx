@@ -376,6 +376,7 @@ const Asynchronous = () => {
 
   return (
     <Select
+      creatable
       value={selected}
       onChange={(_, res) => {
         setSelected(res);

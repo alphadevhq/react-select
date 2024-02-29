@@ -14,6 +14,9 @@ import Tag from './tag';
 import { cn } from './utils';
 import Loading from './loading';
 
+const creatableSignatureLabel = '47ea1738-6a8e-4d87-88c1-f19e291d604e';
+const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
+
 type ISelectedOption<T extends Record<string, any>> =
   | {
       label: string;
@@ -292,8 +295,18 @@ const Select = <T, U extends boolean | undefined = undefined>({
         const filtered = flatOptions.filter((fot) => {
           return fot.label?.toLowerCase().includes(inputText?.toLowerCase());
         });
-        if (filtered.length === 0 && creatable && inputText && !loading) {
-          filtered.push({ label: inputText, value: inputText });
+
+        const isSearchElementPresent = flatOptions.find(
+          (fot) => fot.label?.toLowerCase() === inputText?.toLowerCase()
+        );
+
+        if (!isSearchElementPresent && creatable && inputText && !loading) {
+          filtered.push({
+            label: inputText,
+            value: inputText,
+            // @ts-ignore
+            [creatableSignatureLabel]: creatableSignatureValue,
+          });
         }
         setFilteredOptions(filtered);
       } catch (err) {
@@ -820,6 +833,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   const isActive = multiple
                     ? !!findElement
                     : value === selectedOption[0]?.value;
+
+                  console.log(
+                    'label'
+
+                    // @ts-ignore
+                  );
                   return (
                     <OptionRenderer
                       groupRender={groupRender}
@@ -895,7 +914,14 @@ const Select = <T, U extends boolean | undefined = undefined>({
                         }
                         inputRef.current?.focus();
                       }}
-                      render={render || label}
+                      render={
+                        render ||
+                        // @ts-ignore
+                        data?.[creatableSignatureLabel] ===
+                          creatableSignatureValue
+                          ? `Create "${label}"`
+                          : label
+                      }
                       label={label}
                       value={value}
                     />
