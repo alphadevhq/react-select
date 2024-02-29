@@ -154,6 +154,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const [filterable, setFilterable] = useState(searchable);
 
   const hiddenTextRef = useRef<HTMLDivElement>(null);
+  const currentItemPositionRef = useRef<number[]>([]);
 
   useEffect(() => {
     if (!value) {
@@ -244,15 +245,24 @@ const Select = <T, U extends boolean | undefined = undefined>({
   useEffect(() => {
     if (!show) {
       setInputText('');
+      currentItemPositionRef.current = currentItemPositionRef.current.splice(
+        0,
+        1
+      );
     }
     if (show) {
       makeItemActive();
       listRef.current?.scrollTo({
-        index: 0,
+        index:
+          currentItemPositionRef.current.length > 0
+            ? currentItemPositionRef.current[0]
+            : 0,
+        align: 'top',
       });
       inputRef.current?.focus();
     }
 
+    console.log(currentItemPositionRef.current);
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
     onOpenChange?.(show);
   }, [show]);
@@ -795,6 +805,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   const findElement = selectedOption.find(
                     (so) => so.value === value
                   );
+                  const currentIndex = flatOptions.findIndex(
+                    (fo) => fo.value === value
+                  );
+
                   const isActive = multiple
                     ? !!findElement
                     : value === selectedOption[0]?.value;
@@ -839,6 +853,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
                             : // @ts-ignore
                               val?.value) as any
                         );
+
+                        currentItemPositionRef.current.push(currentIndex);
 
                         if (
                           creatable &&

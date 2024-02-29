@@ -365,7 +365,7 @@ const Searchable = () => {
 };
 
 const Asynchronous = () => {
-  const [selected, setSelected] = useState<string | undefined>(undefined);
+  const [selected, setSelected] = useState<string[] | undefined>(undefined);
 
   const options = async () => {
     const data = await (
@@ -376,9 +376,10 @@ const Asynchronous = () => {
 
   return (
     <Select
+      multiple
       value={selected}
-      onChange={(res) => {
-        setSelected(res.value);
+      onChange={(_, res) => {
+        setSelected(res);
       }}
       options={options}
       placeholder="async"
