@@ -834,11 +834,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     ? !!findElement
                     : value === selectedOption[0]?.value;
 
-                  console.log(
-                    'label'
-
-                    // @ts-ignore
-                  );
                   return (
                     <OptionRenderer
                       groupRender={groupRender}
@@ -917,10 +912,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       render={
                         render ||
                         // @ts-ignore
-                        data?.[creatableSignatureLabel] ===
-                          creatableSignatureValue
+                        (data?.[creatableSignatureLabel] ===
+                        creatableSignatureValue
                           ? `Create "${label}"`
-                          : label
+                          : label)
                       }
                       label={label}
                       value={value}
