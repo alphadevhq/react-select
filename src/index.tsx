@@ -233,11 +233,11 @@ const Default = () => {
   ];
   return (
     <Select
-      value={selected}
+      value="apple"
       onChange={(_, v) => {
         setSelected(v);
       }}
-      options={async () => __options}
+      options={async () => []}
     />
   );
 };
@@ -365,7 +365,7 @@ const Searchable = () => {
 };
 
 const Asynchronous = () => {
-  const [selected, setSelected] = useState<string | undefined>(undefined);
+  const [selected, setSelected] = useState<string | undefined>('hello');
 
   const options = async () => {
     const data = await (

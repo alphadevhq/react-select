@@ -19,15 +19,15 @@ const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
 
 type ISelectedOption<T extends Record<string, any>> =
   | {
-      label: string;
-      value: string;
-    }
+    label: string;
+    value: string;
+  }
   | T;
 
 type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>[]
   ? U extends true
-    ? T[number]['options']
-    : T[number]['options'][number]
+  ? T[number]['options']
+  : T[number]['options'][number]
   : U extends true
   ? IOption[] & T
   : ExtractArrayType<IOption & T>;
@@ -72,8 +72,8 @@ export interface ISelect<T, U> {
   menuItemRender?: (value: IMenuItemRender) => ReactNode;
   valueRender?: (value: ExtractOptionType<T, U>) => ReactNode;
   className?:
-    | string
-    | (() => { focus?: string; disabled?: string; default?: string });
+  | string
+  | (() => { focus?: string; disabled?: string; default?: string });
   portalClass?: string;
   menuClass?: string;
   animation?: null | AnimationProps;
@@ -188,10 +188,21 @@ const Select = <T, U extends boolean | undefined = undefined>({
           setSelectedOption([]);
           return;
         }
+        if (Array.isArray(value)) {
+          return;
+        }
         // @ts-ignore
         if (creatable) {
           // @ts-ignore
-          setSelectedOption([{ label: value, value }]);
+          const f = flatOptions.find((fo) => fo.value === v);
+          if (f) {
+            filteredArray = [f];
+            if (filteredArray.length > 0) {
+              setSelectedOption(filteredArray);
+            }
+          } else {
+            setSelectedOption([{ label: value, value }]);
+          }
         } else {
           // @ts-ignore
           const f = flatOptions.find((fo) => fo.value === v);
@@ -203,7 +214,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
           }
         }
       }
-    }
+    } else if (multiple) {
+      if (Array.isArray(value))
+        setSelectedOption(value?.map((v) => ({ label: v, value: v })));
+    } else if (!Array.isArray(value))
+      setSelectedOption([{ label: value, value }]);
   }, [flatOptions, value]);
 
   useEffect(() => {
@@ -446,7 +461,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           className && typeof className === 'function'
             ? `${isDisabled ? className().disabled : className().default}`
             : className ||
-                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
+            'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
         )}
         onClick={(e) => {
           if (isDisabled) {
@@ -505,10 +520,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
                   if (!menuItemRender) {
                     listRef.current?.scrollTo({
-                      key:
+                      key: parseInt(
                         optionItem.nextElementSibling?.getAttribute(
                           'data-value'
                         ) || '',
+                        10
+                      ),
                       align: 'auto',
                     });
                   }
@@ -525,10 +542,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
                   if (!menuItemRender) {
                     listRef.current?.scrollTo({
-                      key:
+                      key: parseInt(
                         optionItem.previousElementSibling?.getAttribute(
                           'data-value'
                         ) || '',
+                        10
+                      ),
                       align: 'auto',
                     });
                   }
@@ -739,27 +758,27 @@ const Select = <T, U extends boolean | undefined = undefined>({
           showclear,
           loading,
         }) || (
-          <div
-            tabIndex={-1}
-            className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
-          >
-            <Loading loading={loading && !show} />
-            {showclear && !isDisabled && selectedOption.length > 0 && (
-              <button
-                aria-label="clear"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClear();
-                }}
-                tabIndex={-1}
-                className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
-              >
-                <CloseIcon size={16} />
-              </button>
-            )}
-            <DropdownIcon size={18} />
-          </div>
-        )}
+            <div
+              tabIndex={-1}
+              className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
+            >
+              <Loading loading={loading && !show} />
+              {showclear && !isDisabled && selectedOption.length > 0 && (
+                <button
+                  aria-label="clear"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClear();
+                  }}
+                  tabIndex={-1}
+                  className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
+                >
+                  <CloseIcon size={16} />
+                </button>
+              )}
+              <DropdownIcon size={18} />
+            </div>
+          )}
       </div>
 
       {/* Popup list section */}
@@ -772,7 +791,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             className={cn(
               'react-select-portal zener-pointer-events-auto',
               portalClass ||
-                'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
+              'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
               'zener-select'
             )}
             onClick={() => {
@@ -795,17 +814,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
               className={cn(
                 'relative zener-z-[99999999999999999999] react-select-dialog zener-flex zener-flex-col ',
                 menuClass ||
-                  'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu'
+                'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu'
               )}
               {...(animation ||
                 (animation === null
                   ? {}
                   : {
-                      initial: { opacity: 0, translateY: -5 },
-                      animate: { opacity: 1, translateY: 0 },
-                      exit: { opacity: 0, translateY: -5 },
-                      transition: { duration: 0.2 },
-                    }))}
+                    initial: { opacity: 0, translateY: -5 },
+                    animate: { opacity: 1, translateY: 0 },
+                    exit: { opacity: 0, translateY: -5 },
+                    transition: { duration: 0.2 },
+                  }))}
               ref={dialogRef}
             >
               <List
@@ -873,9 +892,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           (multiple
                             ? // @ts-ignore
 
-                              val?.map((v) => v.value)
+                            val?.map((v) => v.value)
                             : // @ts-ignore
-                              val?.value) as any
+                            val?.value) as any
                         );
 
                         // for auto scrolling to first selected element
@@ -884,9 +903,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           // @ts-ignore
                           multiple && val.length > 0
                             ? // @ts-ignore
-                              val[0]?.value
+                            val[0]?.value
                             : // @ts-ignore
-                              val.value
+                            val.value
                         );
                         if (
                           creatable &&
@@ -913,7 +932,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                         render ||
                         // @ts-ignore
                         (data?.[creatableSignatureLabel] ===
-                        creatableSignatureValue
+                          creatableSignatureValue
                           ? `Create "${label}"`
                           : label)
                       }
