@@ -28,6 +28,7 @@ export type IOptionItem = {
     tabIndex: number | undefined;
   };
 };
+
 interface IOptionRenderer {
   render: IOptionRender;
   onClick: () => void;
@@ -42,6 +43,7 @@ interface IOptionRenderer {
   groupMode: boolean;
   itemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
   groupRender?: ({ label }: { label: string }) => ReactNode;
+  disabled?: boolean;
 }
 
 const OptionRenderer = forwardRef(
@@ -60,6 +62,7 @@ const OptionRenderer = forwardRef(
       groupMode,
       itemRender: ItemRender,
       groupRender,
+      disabled,
     }: IOptionRenderer,
     ref: any
   ) => {
@@ -68,6 +71,10 @@ const OptionRenderer = forwardRef(
     const [isFocused, setIsFocused] = useState(false);
 
     const handleFocus = () => {
+      if (disabled) {
+        return;
+      }
+
       const siblings = wrapperRef.current?.parentNode?.querySelectorAll(
         '.option-item-container'
       );
@@ -111,7 +118,7 @@ const OptionRenderer = forwardRef(
     }, [hoveredElement]);
 
     useEffect(() => {
-      if (isFocused) {
+      if (isFocused && !disabled) {
         onClick();
       }
     }, [enterPressed]);
@@ -122,6 +129,8 @@ const OptionRenderer = forwardRef(
         ref={wrapperRef}
         data-value={value}
         data-active={active}
+        data-disabled={disabled}
+        data-type={typeof value}
       >
         <div ref={ref} tabIndex={-1}>
           {(group && groupRender?.({ label: group || '' })) ||
@@ -137,10 +146,15 @@ const OptionRenderer = forwardRef(
                 'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-lg zener-border-t zener-border-t-white zener-truncate ':
                   true,
                 'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
+                'zener-text-gray-400': !!disabled,
                 'zener-pr-2 zener-pl-5': groupMode,
                 'zener-px-2': !groupMode,
               })}
-              onClick={onClick}
+              onClick={() => {
+                if (!disabled) {
+                  onClick?.();
+                }
+              }}
               onFocus={onFocus}
               onMouseMove={handleFocus}
             >

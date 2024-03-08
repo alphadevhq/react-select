@@ -5,7 +5,15 @@
 import { Portal } from '@radix-ui/react-portal';
 import { AnimatePresence, AnimationProps, motion } from 'framer-motion';
 import List, { ListRef } from 'rc-virtual-list';
-import { KeyboardEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  Dispatch,
+  KeyboardEvent,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import CloseIcon from './close-icon';
 import DropdownIcon from './dropdown-icon';
 import type { IGroupOption, IOption } from './option';
@@ -19,15 +27,15 @@ const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
 
 type ISelectedOption<T extends Record<string, any>> =
   | {
-    label: string;
-    value: string;
-  }
+      label: string;
+      value: string;
+    }
   | T;
 
 type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>[]
   ? U extends true
-  ? T[number]['options']
-  : T[number]['options'][number]
+    ? T[number]['options']
+    : T[number]['options'][number]
   : U extends true
   ? IOption[] & T
   : ExtractArrayType<IOption & T>;
@@ -51,8 +59,6 @@ export type IGroupRender = { label: string };
 
 export type IMenuItemRender = IOptionItem;
 
-// type IValue = {label:string, value:string}
-
 export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
   virtual?: boolean;
@@ -72,8 +78,8 @@ export interface ISelect<T, U> {
   menuItemRender?: (value: IMenuItemRender) => ReactNode;
   valueRender?: (value: ExtractOptionType<T, U>) => ReactNode;
   className?:
-  | string
-  | (() => { focus?: string; disabled?: string; default?: string });
+    | string
+    | (() => { focus?: string; disabled?: string; default?: string });
   portalClass?: string;
   menuClass?: string;
   animation?: null | AnimationProps;
@@ -93,6 +99,35 @@ const getPosition = (target: HTMLDivElement) => {
     width,
     height,
   };
+};
+
+const navigateItem = ({
+  nextItem,
+  currentItem,
+  menuItemRender,
+  listRef,
+  setHoveredElement,
+}: {
+  nextItem: Element | null;
+  currentItem: Element | null;
+  menuItemRender: ISelect<null, null>['menuItemRender'];
+  listRef: ListRef | null;
+  setHoveredElement: Dispatch<SetStateAction<Element | undefined>>;
+}) => {
+  if (nextItem) {
+    currentItem?.removeAttribute('focused');
+    nextItem.setAttribute('focused', 'true');
+    setHoveredElement(nextItem);
+
+    if (!menuItemRender) {
+      const data = nextItem?.getAttribute('data-value') || '';
+      const dataType = nextItem.getAttribute('data-type') || 'string';
+      listRef?.scrollTo({
+        key: dataType === 'number' ? parseInt(data, 10) : data,
+        align: 'auto',
+      });
+    }
+  }
 };
 
 const Select = <T, U extends boolean | undefined = undefined>({
@@ -249,6 +284,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
       const hoveredEl = portalRef.current.querySelectorAll(
         '.option-item-container'
       );
+      console.log(hoveredEl);
       hoveredEl.forEach((hl, index) => {
         if (index === 0) {
           hl.setAttribute('focused', 'true');
@@ -265,11 +301,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
       setInputText('');
     }
     if (show) {
-      makeItemActive();
       listRef.current?.scrollTo({
         index: currentItemPositionRef.current,
         align: 'top',
       });
+      makeItemActive();
       inputRef.current?.focus();
     }
 
@@ -364,6 +400,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   };
 
   const [w, setW] = useState(4);
+
   useEffect(() => {
     setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0));
     listRef.current?.scrollTo({
@@ -392,9 +429,11 @@ const Select = <T, U extends boolean | undefined = undefined>({
   }, [open, isDisabled]);
 
   useEffect(() => {
-    if (menuItemRender) {
+    if (menuItemRender && hoveredElement) {
+      const data = hoveredElement.getAttribute('data-value') || '';
+      const dataType = hoveredElement.getAttribute('data-type') || 'string';
       listRef.current?.scrollTo({
-        key: hoveredElement?.getAttribute('data-value') || '',
+        key: dataType === 'number' ? parseInt(data, 10) : data,
         align: 'auto',
       });
     }
@@ -461,7 +500,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           className && typeof className === 'function'
             ? `${isDisabled ? className().disabled : className().default}`
             : className ||
-            'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
+                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
         )}
         onClick={(e) => {
           if (isDisabled) {
@@ -513,45 +552,23 @@ const Select = <T, U extends boolean | undefined = undefined>({
             );
             if (optionItem) {
               if (key === 'ArrowDown') {
-                if (optionItem.nextElementSibling) {
-                  optionItem.removeAttribute('focused');
-                  optionItem.nextElementSibling.setAttribute('focused', 'true');
-                  setHoveredElement(optionItem.nextElementSibling);
-
-                  if (!menuItemRender) {
-                    listRef.current?.scrollTo({
-                      key: parseInt(
-                        optionItem.nextElementSibling?.getAttribute(
-                          'data-value'
-                        ) || '',
-                        10
-                      ),
-                      align: 'auto',
-                    });
-                  }
-                }
+                const item = optionItem.nextElementSibling;
+                navigateItem({
+                  nextItem: item,
+                  currentItem: optionItem,
+                  menuItemRender,
+                  listRef: listRef.current,
+                  setHoveredElement,
+                });
               } else if (key === 'ArrowUp') {
-                if (optionItem.previousElementSibling) {
-                  optionItem.removeAttribute('focused');
-                  optionItem.previousElementSibling.setAttribute(
-                    'focused',
-                    'true'
-                  );
-
-                  setHoveredElement(optionItem.previousElementSibling);
-
-                  if (!menuItemRender) {
-                    listRef.current?.scrollTo({
-                      key: parseInt(
-                        optionItem.previousElementSibling?.getAttribute(
-                          'data-value'
-                        ) || '',
-                        10
-                      ),
-                      align: 'auto',
-                    });
-                  }
-                }
+                const item = optionItem.previousElementSibling;
+                navigateItem({
+                  nextItem: item,
+                  currentItem: optionItem,
+                  menuItemRender,
+                  listRef: listRef.current,
+                  setHoveredElement,
+                });
               }
             } else {
               makeItemActive();
@@ -758,27 +775,27 @@ const Select = <T, U extends boolean | undefined = undefined>({
           showclear,
           loading,
         }) || (
-            <div
-              tabIndex={-1}
-              className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
-            >
-              <Loading loading={loading && !show} />
-              {showclear && !isDisabled && selectedOption.length > 0 && (
-                <button
-                  aria-label="clear"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClear();
-                  }}
-                  tabIndex={-1}
-                  className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
-                >
-                  <CloseIcon size={16} />
-                </button>
-              )}
-              <DropdownIcon size={18} />
-            </div>
-          )}
+          <div
+            tabIndex={-1}
+            className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
+          >
+            <Loading loading={loading && !show} />
+            {showclear && !isDisabled && selectedOption.length > 0 && (
+              <button
+                aria-label="clear"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                }}
+                tabIndex={-1}
+                className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
+              >
+                <CloseIcon size={16} />
+              </button>
+            )}
+            <DropdownIcon size={18} />
+          </div>
+        )}
       </div>
 
       {/* Popup list section */}
@@ -791,14 +808,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
             className={cn(
               'react-select-portal zener-pointer-events-auto',
               portalClass ||
-              'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
+                'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
               'zener-select'
             )}
-            onClick={() => {
-              if (!multiple) {
-                closeList();
-              }
-            }}
             onFocus={() => {
               inputRef.current?.focus();
             }}
@@ -814,17 +826,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
               className={cn(
                 'relative zener-z-[99999999999999999999] react-select-dialog zener-flex zener-flex-col ',
                 menuClass ||
-                'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu'
+                  'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu'
               )}
               {...(animation ||
                 (animation === null
                   ? {}
                   : {
-                    initial: { opacity: 0, translateY: -5 },
-                    animate: { opacity: 1, translateY: 0 },
-                    exit: { opacity: 0, translateY: -5 },
-                    transition: { duration: 0.2 },
-                  }))}
+                      initial: { opacity: 0, translateY: -5 },
+                      animate: { opacity: 1, translateY: 0 },
+                      exit: { opacity: 0, translateY: -5 },
+                      transition: { duration: 0.2 },
+                    }))}
               ref={dialogRef}
             >
               <List
@@ -839,7 +851,8 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 className="zener-select"
               >
                 {(data) => {
-                  const { label, value, render, group, groupMode } = data;
+                  const { label, value, render, group, groupMode, disabled } =
+                    data;
                   const selectValue = { ...data };
                   delete selectValue.group;
                   delete selectValue.groupMode;
@@ -855,6 +868,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
                   return (
                     <OptionRenderer
+                      disabled={disabled}
                       groupRender={groupRender}
                       groupMode={!!groupMode}
                       itemRender={menuItemRender}
@@ -864,6 +878,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       hoveredElement={hoveredElement}
                       active={isActive}
                       onClick={() => {
+                        if (disabled) {
+                          return;
+                        }
+
                         inputRef.current?.focus();
                         // @ts-ignore
                         let val;
@@ -892,9 +910,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           (multiple
                             ? // @ts-ignore
 
-                            val?.map((v) => v.value)
+                              val?.map((v) => v.value)
                             : // @ts-ignore
-                            val?.value) as any
+                              val?.value) as any
                         );
 
                         // for auto scrolling to first selected element
@@ -903,9 +921,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           // @ts-ignore
                           multiple && val.length > 0
                             ? // @ts-ignore
-                            val[0]?.value
+                              val[0]?.value
                             : // @ts-ignore
-                            val.value
+                              val.value
                         );
                         if (
                           creatable &&
@@ -920,6 +938,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
                           selectContainerRef.current?.focus();
                         }
                         inputRef.current?.focus();
+
+                        if (!multiple && !disabled) {
+                          closeList();
+                        }
                       }}
                       onFocus={(e) => {
                         e.preventDefault();
@@ -932,7 +954,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                         render ||
                         // @ts-ignore
                         (data?.[creatableSignatureLabel] ===
-                          creatableSignatureValue
+                        creatableSignatureValue
                           ? `Create "${label}"`
                           : label)
                       }

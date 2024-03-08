@@ -227,17 +227,25 @@ const Default = () => {
       label: 'apple',
       value: 'apple',
     },
-    { label: 'ball', value: 'ball' },
-    { label: 'cat', value: 'cat' },
-    { label: 'dog', value: 'dog' },
+    { label: 'ball', value: 'ball', disabled: true },
+    { label: 'cat', value: 'cat', disabled: true },
+    { label: 'dog', value: 'dog', disabled: true },
+    { label: 'cat1', value: 'cat1', disabled: true },
+    { label: 'dog2', value: 'dog2', disabled: true },
+    { label: 'cat3', value: 'cat3', disabled: true },
+    { label: 'dog4', value: 'dog4' },
+    { label: 'cat5', value: 'cat5' },
+    { label: 'dog6', value: 'dog6', disabled: true },
+    { label: 'cat6', value: 'cat7' },
+    { label: 'dog7', value: 'dog8', disabled: true },
   ];
   return (
     <Select
-      value="apple"
+      value={selected}
       onChange={(_, v) => {
         setSelected(v);
       }}
-      options={async () => []}
+      options={async () => __options}
     />
   );
 };
