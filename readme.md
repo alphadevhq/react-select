@@ -508,6 +508,12 @@ This feature empowers you to tailor each option item according to your preferenc
 -   **Type**: `(text: string) => void | boolean`
 -   **Description**: Triggers when typing. If true or void is returned then it uses in-build filtering.
 
+#### `createLabel?`
+
+-   **Type**: `string`
+-   **Default**: `Create`
+-   **Description**: Prefix label for creating new element.
+
 ## Types
 ```ts
 type ISuffixRender = {  

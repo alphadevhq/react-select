@@ -37,8 +37,8 @@ type ExtractOptionType<T, U> = T extends IGroupOption<IOption[] | T[]>[]
     ? T[number]['options']
     : T[number]['options'][number]
   : U extends true
-  ? IOption[] & T
-  : ExtractArrayType<IOption & T>;
+    ? IOption[] & T
+    : ExtractArrayType<IOption & T>;
 
 type ExtractArrayType<T> = T extends (infer U)[] ? U : never;
 
@@ -85,10 +85,11 @@ export interface ISelect<T, U> {
   animation?: null | AnimationProps;
   onChange?: (
     value: ExtractOptionType<T, U>,
-    valueAsString: U extends true ? string[] : string
+    valueAsString: U extends true ? string[] : string,
   ) => void;
   value: (U extends true ? string[] : string) | undefined;
   onOpenChange?: (open: boolean) => void;
+  createLabel?: string;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -155,6 +156,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   onOpenChange,
   onSearch,
   searchable = true,
+  createLabel,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -213,7 +215,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           setSelectedOption(filteredArray);
         } else {
           filteredArray = flatOptions.filter((fo) =>
-            value.find((v) => v === fo.value)
+            value.find((v) => v === fo.value),
           );
           setSelectedOption(filteredArray);
         }
@@ -272,7 +274,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   useEffect(() => {
     const optionItem = dialogRef.current?.querySelector(
-      '.option-item-container[focused]'
+      '.option-item-container[focused]',
     );
     if (optionItem) {
       setHoveredElement(optionItem);
@@ -282,9 +284,9 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const makeItemActive = () => {
     if (portalRef.current) {
       const hoveredEl = portalRef.current.querySelectorAll(
-        '.option-item-container'
+        '.option-item-container',
       );
-      console.log(hoveredEl);
+      console.log(hoveredEl[0].textContent);
       hoveredEl.forEach((hl, index) => {
         if (index === 0) {
           hl.setAttribute('focused', 'true');
@@ -326,7 +328,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 ...optt,
                 group: index === 0 ? opt.label : null,
                 groupMode: true,
-              }))
+              })),
           );
 
           setFlatOptions(filtered as any);
@@ -348,7 +350,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
         });
 
         const isSearchElementPresent = flatOptions.find(
-          (fot) => fot.label?.toLowerCase() === inputText?.toLowerCase()
+          (fot) => fot.label?.toLowerCase() === inputText?.toLowerCase(),
         );
 
         if (!isSearchElementPresent && creatable && inputText && !loading) {
@@ -374,7 +376,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   useEffect(() => {
     const holder = portalRef.current?.querySelector(
-      '.rc-virtual-list-holder'
+      '.rc-virtual-list-holder',
     ) as HTMLDivElement;
     if (holder) {
       holder.style.maxHeight = '200px';
@@ -445,7 +447,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
     if (className && typeof className === 'function' && !!className().focus) {
       selectContainerRef.current?.classList.add(
-        ...(className().focus?.split(' ') || [''])
+        ...(className().focus?.split(' ') || ['']),
       );
     }
   };
@@ -453,10 +455,10 @@ const Select = <T, U extends boolean | undefined = undefined>({
   const removeFocus = () => {
     if (className && typeof className === 'function' && !!className().focus) {
       selectContainerRef.current?.classList.remove(
-        ...(className().focus?.split(' ') || [''])
+        ...(className().focus?.split(' ') || ['']),
       );
       selectContainerRef.current?.classList.add(
-        ...(className().default?.split(' ') || [''])
+        ...(className().default?.split(' ') || ['']),
       );
     }
   };
@@ -481,7 +483,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
     currentIndex = flatOptions.findIndex(
       (fo) =>
         // @ts-ignore
-        fo.value === val
+        fo.value === val,
     );
     currentItemPositionRef.current = currentIndex;
   };
@@ -500,7 +502,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
           className && typeof className === 'function'
             ? `${isDisabled ? className().disabled : className().default}`
             : className ||
-                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400'
+                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400',
         )}
         onClick={(e) => {
           if (isDisabled) {
@@ -548,7 +550,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             }
 
             const optionItem = dialogRef.current?.querySelector(
-              '.option-item-container[focused]'
+              '.option-item-container[focused]',
             );
             if (optionItem) {
               if (key === 'ArrowDown') {
@@ -599,7 +601,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
               'zener-flex-1': !multiple,
               'zener-cursor-text': (searchable || !!creatable) && !isDisabled,
             },
-            multiple && selectedOption.length > 0 ? '-zener-ml-1' : ''
+            multiple && selectedOption.length > 0 ? '-zener-ml-1' : '',
           )}
         >
           {/* Tag section for multiple selection mode */}
@@ -623,7 +625,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   >
                     {so.label}
                   </Tag>
-                )
+                ),
             )}
 
           {/* Single selection value */}
@@ -657,7 +659,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 'zener-text-black/20 zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
                 placeholder && !inputText && selectedOption.length === 0
                   ? 'zener-opacity-100'
-                  : 'zener-opacity-0'
+                  : 'zener-opacity-0',
               )}
             >
               {placeholder}
@@ -668,7 +670,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 'zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
                 placeholder && !inputText && selectedOption.length === 0
                   ? 'zener-opacity-100'
-                  : 'zener-opacity-0'
+                  : 'zener-opacity-0',
               )}
             >
               {placeholder}
@@ -693,7 +695,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 style={{
                   width: Math.max(
                     4,
-                    (hiddenTextRef.current?.clientWidth || 0) + 20
+                    (hiddenTextRef.current?.clientWidth || 0) + 20,
                   ),
                 }}
                 className={cn('zener-max-w-full zener-h-full', {
@@ -724,7 +726,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     ) {
                       const val = selectedOption.slice(
                         0,
-                        selectedOption.length - 1
+                        selectedOption.length - 1,
                       );
 
                       setSelectedOption(val);
@@ -750,7 +752,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                     {
                       'zener-absolute zener-inset-0':
                         !multiple && (searchable || !!creatable),
-                    }
+                    },
                   )}
                   value={inputText}
                   onChange={({ target }) => {
@@ -809,7 +811,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
               'react-select-portal zener-pointer-events-auto',
               portalClass ||
                 'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
-              'zener-select'
+              'zener-select',
             )}
             onFocus={() => {
               inputRef.current?.focus();
@@ -826,7 +828,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
               className={cn(
                 'relative zener-z-[99999999999999999999] react-select-dialog zener-flex zener-flex-col ',
                 menuClass ||
-                  'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu'
+                  'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu',
               )}
               {...(animation ||
                 (animation === null
@@ -859,7 +861,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                   delete selectValue.render;
 
                   const findElement = selectedOption.find(
-                    (so) => so.value === value
+                    (so) => so.value === value,
                   );
 
                   const isActive = multiple
@@ -912,7 +914,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
                               val?.map((v) => v.value)
                             : // @ts-ignore
-                              val?.value) as any
+                              val?.value) as any,
                         );
 
                         // for auto scrolling to first selected element
@@ -923,7 +925,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                             ? // @ts-ignore
                               val[0]?.value
                             : // @ts-ignore
-                              val.value
+                              val.value,
                         );
                         if (
                           creatable &&
@@ -952,11 +954,23 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       }}
                       render={
                         render ||
-                        // @ts-ignore
-                        (data?.[creatableSignatureLabel] ===
-                        creatableSignatureValue
-                          ? `Create "${label}"`
-                          : label)
+                        (() => {
+                          if (
+                            // @ts-ignore
+                            data?.[creatableSignatureLabel] ===
+                            creatableSignatureValue
+                          ) {
+                            if (findElement?.value === data.value && multiple) {
+                              return `${label}`;
+                            }
+
+                            if (createLabel) {
+                              return `${createLabel} "${label}"`;
+                            }
+                            return `Create "${label}"`;
+                          }
+                          return label;
+                        })
                       }
                       label={label}
                       value={value}

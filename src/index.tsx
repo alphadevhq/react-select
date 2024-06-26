@@ -105,12 +105,12 @@ const _groupOptions = [
   },
 ];
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById('root') as HTMLElement,
 );
 
 export function mapper<A, B>(
   array: A[],
-  transform: (value: A, index: number) => B
+  transform: (value: A, index: number) => B,
 ): B[] {
   let _;
   return array.map(transform);
@@ -131,7 +131,7 @@ const _f = async () => {
 const _country = async () => {
   const data = await (
     await fetch(
-      'https://cdn.jsdelivr.net/npm/country-flag-emoji-json@2.0.0/dist/index.json'
+      'https://cdn.jsdelivr.net/npm/country-flag-emoji-json@2.0.0/dist/index.json',
     )
   ).json();
 
@@ -322,7 +322,7 @@ const Creatable = () => {
     { label: 'apple', value: 'apple' },
     { label: 'ball', value: 'ball' },
     { label: 'cat', value: 'cat' },
-    { label: 'dog', value: 'dog' },
+    { label: 'dog', value: 'dog', disabled: true },
   ];
   return (
     <Select
@@ -333,6 +333,7 @@ const Creatable = () => {
         console.log(v);
       }}
       options={async () => options}
+      createLabel="Add new "
     />
   );
 };
@@ -533,7 +534,7 @@ const Customize = () => {
                 {
                   'zener-bg-yellow-500': !!active,
                   'zener-bg-yellow-400': !!focused && !active,
-                }
+                },
               )}
             >
               {label}
@@ -636,7 +637,7 @@ root.render(
         // menuItemRender={_MenuRenderer}
       /> */}
     </div>
-  </div>
+  </div>,
 );
 
 console.log(ReactDOMS.renderToString(<div>hello</div>));
