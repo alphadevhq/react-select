@@ -286,7 +286,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
       const hoveredEl = portalRef.current.querySelectorAll(
         '.option-item-container',
       );
-      console.log(hoveredEl[0].textContent);
       hoveredEl.forEach((hl, index) => {
         if (index === 0) {
           hl.setAttribute('focused', 'true');
