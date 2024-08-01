@@ -246,6 +246,7 @@ const Default = () => {
         setSelected(v);
       }}
       options={async () => __options}
+      tabIndex={-1}
     />
   );
 };

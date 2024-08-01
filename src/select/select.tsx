@@ -90,6 +90,7 @@ export interface ISelect<T, U> {
   value: (U extends true ? string[] : string) | undefined;
   onOpenChange?: (open: boolean) => void;
   createLabel?: string;
+  tabIndex?: number;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -157,6 +158,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   onSearch,
   searchable = true,
   createLabel,
+  tabIndex,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -490,7 +492,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   return (
     <>
       <div
-        tabIndex={searchable || creatable ? -1 : 0}
+        tabIndex={tabIndex || (searchable || creatable ? -1 : 0)}
         ref={selectContainerRef}
         className={cn(
           'zener-select zener-relative zener-flex zener-flex-row zener-items-center pulsable',
@@ -702,6 +704,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
                 })}
               >
                 <input
+                  tabIndex={tabIndex}
                   disabled={isDisabled}
                   autoComplete="off"
                   ref={inputRef}
