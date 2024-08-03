@@ -514,6 +514,12 @@ This feature empowers you to tailor each option item according to your preferenc
 -   **Default**: `Create`
 -   **Description**: Prefix label for creating new element.
 
+#### `noMenu?`
+
+-   **Type**: `boolean`
+-   **Default**: `false`
+-   **Description**: Hides select popup menu.
+
 ## Types
 ```ts
 type ISuffixRender = {  
