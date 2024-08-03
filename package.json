@@ -2,7 +2,7 @@
   "name": "@oshq/react-select",
   "author": "Bikash Ojha",
   "license": "MIT",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The React Select is a minimal select component for reactjs.",
   "private": false,
   "types": "./dist/@types/index.d.ts",
@@ -37,7 +37,11 @@
     "ui",
     "multi-select"
   ],
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -85,7 +89,11 @@
     "typescript": "^5.2.2"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
