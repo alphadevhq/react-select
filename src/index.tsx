@@ -331,10 +331,12 @@ const Creatable = () => {
       value={selected}
       onChange={(res, v) => {
         setSelected(res.value);
-        console.log(v);
+        console.log(v, 'here');
       }}
       options={async () => options}
       createLabel="Add new "
+      placeholder="Creatable"
+      noMenu
     />
   );
 };

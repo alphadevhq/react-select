@@ -92,6 +92,7 @@ export interface ISelect<T, U> {
   onOpenChange?: (open: boolean) => void;
   createLabel?: string;
   tabIndex?: number;
+  noMenu?: boolean;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -160,6 +161,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
   searchable = true,
   createLabel,
   tabIndex,
+  noMenu,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
@@ -413,17 +415,20 @@ const Select = <T, U extends boolean | undefined = undefined>({
     });
   }, [inputText]);
 
+  // set the bounding rect of menu
   useEffect(() => {
     if (selectContainerRef && selectContainerRef.current) {
       setInputBounding(getPosition(selectContainerRef.current));
     }
   }, [inputText, w, selectedOption]);
 
+  // set disable state for select
   useEffect(() => {
     setIsDisabled(disabled || (disableWhileLoading && loading) || false);
     selectContainerRef.current?.setAttribute('disabled', `${disabled}`);
   }, [disabled, disableWhileLoading, loading]);
 
+  // make menu hidden if disabled
   useEffect(() => {
     if (isDisabled) {
       setShow(false);
@@ -491,7 +496,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
   };
 
   // typeahead feature
-
   const { selectedIndex } = useTypehead({
     element: selectContainerRef.current,
     items: flatOptions,
@@ -523,6 +527,41 @@ const Select = <T, U extends boolean | undefined = undefined>({
       }
     }, 50);
   }, [selectedIndex]);
+
+  // no menu option
+  const handleNoMenuMode = (e: KeyboardEvent) => {
+    console.log(selectedOption);
+    if (e.key === 'Enter' && inputText && creatable && noMenu) {
+      if (
+        selectedOption.find(
+          (s) => s.label === inputText && s.value === inputText,
+        )
+      ) {
+        setInputText('');
+        return;
+      }
+      const v = { label: inputText, value: inputText, disabled: false };
+      let val;
+      if (multiple) {
+        val = [...selectedOption, v];
+        setSelectedOption(val);
+      } else {
+        val = v;
+        setSelectedOption([v]);
+      }
+      onChange?.(
+        val as any,
+        // @ts-ignore
+        (multiple
+          ? // @ts-ignore
+
+            val?.map((v) => v.value)
+          : // @ts-ignore
+            val?.value) as any,
+      );
+      setInputText('');
+    }
+  };
 
   return (
     <>
@@ -669,7 +708,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
             <div
               className={cn('zener-flex zener-items-center zener-min-w-0', {
                 'zener-transition-all': show,
-                'zener-opacity-30': show && !open,
+                'zener-opacity-30': show && !open && !noMenu,
                 'zener-hidden': !!inputText,
                 'zener-w-full': !(creatable || searchable),
               })}
@@ -775,11 +814,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
                       setShow(true);
                     }
                   }}
-                  onKeyUp={() => {
+                  onKeyUp={(e: KeyboardEvent) => {
                     const reg = /^[0-9a-zA-Z\\@#$-/:-?{-~!"^_`\[\]]+$/;
                     if (!show && inputRef.current?.value.match(reg)) {
                       setShow(true);
                     }
+                    handleNoMenuMode(e);
                   }}
                   className={cn(
                     'zener-outline-none min-w-[4.1px] zener-bg-transparent zener-h-full zener-border-0',
@@ -840,7 +880,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
       {/* Popup list section */}
 
       <AnimatePresence>
-        {show && (
+        {show && !noMenu && (
           <Portal
             ref={portalRef}
             tabIndex={-1}
