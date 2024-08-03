@@ -128,7 +128,7 @@ const _f = async () => {
   return [...k];
 };
 
-const _country = async () => {
+const country = async () => {
   const data = await (
     await fetch(
       'https://cdn.jsdelivr.net/npm/country-flag-emoji-json@2.0.0/dist/index.json',
@@ -365,7 +365,6 @@ const Searchable = () => {
       options={async () => options}
       placeholder="searchable"
       searchable
-      open
       onSearch={(t) => {
         console.log(t);
         return true;
@@ -386,7 +385,6 @@ const Asynchronous = () => {
 
   return (
     <Select
-      creatable
       value={selected}
       onChange={(_, res) => {
         setSelected(res);
@@ -553,11 +551,12 @@ const Icons = () => {
 
   return (
     <Select
+      searchable={false}
       value={selected}
       onChange={(res) => {
         setSelected(res.value);
       }}
-      options={_country}
+      options={country}
       placeholder="clearable"
       valueRender={(value) => (
         <div className="zener-flex zener-flex-row zener-items-center zener-gap-1">
@@ -587,7 +586,7 @@ root.render(
       {/* <Group /> */}
       {/* <Searchable /> */}
       <Creatable />
-      {/* <Icons /> */}
+      <Icons />
 
       <Asynchronous />
       {/* <Clearable /> */}

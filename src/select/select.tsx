@@ -21,6 +21,7 @@ import OptionRenderer, { IOptionItem } from './option-renderer';
 import Tag from './tag';
 import { cn } from './utils';
 import Loading from './loading';
+import useTypehead from './typeahead';
 
 const creatableSignatureLabel = '47ea1738-6a8e-4d87-88c1-f19e291d604e';
 const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
@@ -488,6 +489,40 @@ const Select = <T, U extends boolean | undefined = undefined>({
     );
     currentItemPositionRef.current = currentIndex;
   };
+
+  // typeahead feature
+
+  const { selectedIndex } = useTypehead({
+    element: selectContainerRef.current,
+    items: flatOptions,
+    enabled: !creatable && !searchable && show,
+  });
+
+  useEffect(() => {
+    listRef.current?.scrollTo({
+      index: selectedIndex,
+      align: 'auto',
+    });
+
+    setTimeout(() => {
+      if (portalRef.current) {
+        const hoveredEl = portalRef.current.querySelectorAll(
+          '.option-item-container',
+        );
+        hoveredEl.forEach((hl) => {
+          if (
+            `${hl.getAttribute('data-value')}` ===
+            `${filteredOptions[selectedIndex]?.value}`
+          ) {
+            hl.setAttribute('focused', 'true');
+            setHoveredElement(hl);
+          } else {
+            hl.removeAttribute('focused');
+          }
+        });
+      }
+    }, 50);
+  }, [selectedIndex]);
 
   return (
     <>
