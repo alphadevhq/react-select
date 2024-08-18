@@ -14,11 +14,11 @@ const Tag = ({ children, disabled, value, onClose = (_) => _ }: ITag) => {
     <div
       tabIndex={-1}
       className={cn(
-        'zener-flex zener-flex-row zener-items-center zener-gap-2 zener-rounded zener-px-2 zener-text-sm zener-h-6 zener-mr-0.5 zener-ml-0 zener-z-10 zener-transition-all zener-truncate',
+        'zener-flex zener-flex-row zener-items-center zener-gap-2 zener-rounded zener-px-2 zener-text-sm zener-h-full zener-mr-0.5 zener-ml-0 zener-z-10 zener-transition-all zener-truncate',
         {
           'zener-bg-[#f0f0f0]': !disabled,
           'zener-bg-black/5': !!disabled,
-        }
+        },
       )}
     >
       <span className="zener-truncate">{children}</span>

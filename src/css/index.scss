@@ -127,8 +127,8 @@
   height: 1.25rem;
 }
 
-.zener-h-6 {
-  height: 1.5rem;
+.zener-h-\[60px\] {
+  height: 60px;
 }
 
 .zener-h-full {
@@ -258,6 +258,10 @@
   border-radius: 0.5rem;
 }
 
+.zener-rounded-md {
+  border-radius: 0.375rem;
+}
+
 .zener-border {
   border-width: 1px;
 }
@@ -272,6 +276,11 @@
 
 .zener-border-solid {
   border-style: solid;
+}
+
+.zener-border-gray-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(243 244 246 / var(--tw-border-opacity));
 }
 
 .zener-border-stone-100 {
@@ -383,6 +392,11 @@
   padding-right: 0.5rem;
 }
 
+.zener-px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
 .zener-px-4 {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -396,6 +410,11 @@
 .zener-py-0\.5 {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
+}
+
+.zener-py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .zener-py-2 {

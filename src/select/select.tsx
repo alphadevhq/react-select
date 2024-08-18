@@ -307,12 +307,17 @@ const Select = <T, U extends boolean | undefined = undefined>({
       setInputText('');
     }
     if (show) {
-      listRef.current?.scrollTo({
-        index: currentItemPositionRef.current,
-        align: 'top',
-      });
-      makeItemActive();
-      inputRef.current?.focus();
+      if (selectedOption.length > 0) {
+        scrollToSelected(selectedOption[0].value);
+      }
+      setTimeout(() => {
+        listRef.current?.scrollTo({
+          index: currentItemPositionRef.current,
+          align: 'top',
+        });
+        makeItemActive();
+        inputRef.current?.focus();
+      }, 0);
     }
 
     setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
@@ -670,7 +675,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
         <div
           className={cn(
             'zener-flex-1 zener-overflow-hidden zener-relative',
-            'zener-flex zener-flex-row zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px]',
+            'zener-flex zener-flex-row zener-items-center zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px] zener-h-full',
             {
               'zener-flex-wrap': multiple,
               'zener-flex-1': !multiple,
@@ -996,14 +1001,6 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
                         // for auto scrolling to first selected element
 
-                        scrollToSelected(
-                          // @ts-ignore
-                          multiple && val.length > 0
-                            ? // @ts-ignore
-                              val[0]?.value
-                            : // @ts-ignore
-                              val.value,
-                        );
                         if (
                           creatable &&
                           filteredOptions.length === 1 &&

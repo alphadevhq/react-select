@@ -266,6 +266,7 @@ const Multiselect = () => {
     <Select
       creatable
       multiple
+      showclear
       searchable
       onSearch={(e) => {
         return false;
@@ -276,6 +277,7 @@ const Multiselect = () => {
         console.log(v);
       }}
       options={async () => options}
+      className="zener-py-1 zener-h-[60px] zener-px-3 zener-bg-white zener-border-gray-100 zener-border-solid zener-rounded-md"
     />
   );
 };
