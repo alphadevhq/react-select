@@ -390,12 +390,6 @@ This feature empowers you to tailor each option item according to your preferenc
 -   **Type**: `string | string[]`
 -   **Description**: Represents the current value(s) of the Select component. It should be string or array of string.
 
-#### `virtual?`
-
--   **Type**: `boolean`
--  **Default**: `true`
--   **Description**: Enables optimized rendering for handling large sets of options efficiently through virtual scrolling. Helps in rendering only visible options, improving performance.
-
 #### `noOptionMessage?`
 
 -   **Type**: `ReactNode`
@@ -539,7 +533,17 @@ type ITagRender = {
 	label:  string;  
 }
 
-type IOptionRender = string | (({ active, focused }: { active: boolean; focused: boolean }) => ReactNode);
+type IOptionRender = ({
+  active,
+  focused,
+  disabled,
+  groupMode,
+}: {
+  active: boolean;
+  focused: boolean;
+  disabled?: boolean;
+  groupMode?: boolean;
+}) => ReactNode;
 
 type IMenuItemRender = {  
 	active?:  boolean  |  undefined;  
