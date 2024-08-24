@@ -3,9 +3,11 @@
 /* eslint-disable react/no-unstable-nested-components */
 import ReactDOM from 'react-dom/client';
 import ReactDOMS from 'react-dom/server';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from './select/utils';
 import Select, { IOptionItem } from './select';
+
+import * as Dialog from '@radix-ui/react-dialog';
 
 const _options = [
   {
@@ -241,12 +243,13 @@ const Default = () => {
   ];
   return (
     <Select
-      value={selected}
+      value=""
       onChange={(_, v) => {
         setSelected(v);
       }}
-      options={async () => __options}
+      options={async () => []}
       tabIndex={-1}
+      placeholder="tabindex -1"
     />
   );
 };
@@ -320,7 +323,7 @@ const Group = () => {
 };
 
 const Creatable = () => {
-  const [selected, setSelected] = useState<string | undefined>('apple');
+  const [selected, setSelected] = useState<string[] | undefined>(['apple']);
   const options = [
     { label: 'apple', value: 'apple' },
     { label: 'ball', value: 'ball' },
@@ -330,15 +333,16 @@ const Creatable = () => {
   return (
     <Select
       creatable
+      multiple
       value={selected}
       onChange={(res, v) => {
-        setSelected(res.value);
+        setSelected(v);
         console.log(v, 'here');
       }}
       options={async () => options}
       createLabel="Add new "
       placeholder="Creatable"
-      noMenu
+      // noMenu
     />
   );
 };
@@ -380,12 +384,13 @@ const Searchable = () => {
 const Asynchronous = () => {
   const [selected, setSelected] = useState<string | undefined>('hello');
 
-  const options = async () => {
+  const options = useCallback(async () => {
+    console.log('here api');
     const data = await (
       await fetch('https://jsonplaceholder.typicode.com/photos')
     ).json();
     return [...data.map((res: any) => ({ label: res.title, value: res.id }))];
-  };
+  }, []);
 
   return (
     <Select
@@ -395,6 +400,10 @@ const Asynchronous = () => {
       }}
       options={options}
       placeholder="async"
+      // creatable
+      searchable={false}
+      // menuItemRender={_MenuRenderer}
+      maxMenuHeight={300}
     />
   );
 };
@@ -514,9 +523,12 @@ const Customize = () => {
           </div>
         );
       }}
-      tagRender={({ label, remove, value }) => {
+      tagRender={({ label, remove, value, key }) => {
         return (
-          <div className="zener-bg-yellow-600 zener-rounded zener-px-1.5 zener-truncate zener-py-0.5 zener-flex zener-flex-row zener-items-center zener-justify-center zener-gap-2">
+          <div
+            key={key}
+            className="zener-bg-yellow-600 zener-rounded zener-px-1.5 zener-truncate zener-py-0.5 zener-flex zener-flex-row zener-items-center zener-justify-center zener-gap-2"
+          >
             <span className="zener-truncate">{label}</span>
             <span
               className="zener-cursor-pointer hover:zener-opacity-60"
@@ -562,13 +574,44 @@ const Icons = () => {
       }}
       options={country}
       placeholder="clearable"
-      valueRender={(value) => (
-        <div className="zener-flex zener-flex-row zener-items-center zener-gap-1">
-          <span>{value.country.emoji}</span>
-          <span>{value.label}</span>
-        </div>
-      )}
+      valueRender={(value) => {
+        return (
+          <div className="zener-flex zener-flex-row zener-items-center zener-gap-1">
+            <span>{value.country.emoji}</span>
+            <span>{value.label}</span>
+          </div>
+        );
+      }}
+      onWheel={(e) => e.stopPropagation()}
     />
+  );
+};
+
+const DialogExample = () => {
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger asChild>
+        <button className="zener-shadow zener-border zener-border-gray-200 zener-inline-flex zener-h-[35px] zener-items-center zener-justify-center zener-rounded zener-bg-white zener-px-[15px] zener-font-medium zener-leading-none focus:zener-outline-none">
+          Open dialog
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="zener-bg-black/50 zener-fixed zener-inset-0" />
+        <Dialog.Content className="zener-fixed zener-top-[50%] zener-left-[50%] zener-max-h-[85vh] zener-w-[90vw] zener-max-w-[450px] zener-translate-x-[-50%] zener-translate-y-[-50%] zener-rounded-[6px] zener-bg-white zener-p-[25px] zener-shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] focus:zener-outline-none">
+          <Dialog.Title className="zener-mb-5 zener-text-[17px] zener-font-medium">
+            React select inside dialog box.
+          </Dialog.Title>
+          <Icons />
+          <div className="zener-mt-[25px] zener-flex zener-justify-end">
+            <Dialog.Close asChild>
+              <button className="focus:zener-ring-1 zener-ring-blue-300 zener-inline-flex zener-h-[35px] zener-items-center zener-justify-center zener-rounded-[4px] zener-px-[15px] zener-font-medium zener-leading-none focus:zener-outline-none">
+                close
+              </button>
+            </Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };
 
@@ -584,17 +627,11 @@ root.render(
         gap: '20px',
       }}
     >
-      <App />
-      <Default />
-      <Multiselect />
-      {/* <Group /> */}
-      {/* <Searchable /> */}
       <Creatable />
-      <Icons />
-
       <Asynchronous />
-      {/* <Clearable /> */}
-      {/* <Customize /> */}
+      <DialogExample />
+      <Default />
+      <Icons />
       {/* <Select
         multiple
         // searchable

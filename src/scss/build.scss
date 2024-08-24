@@ -1,39 +1,40 @@
-
-.zener-select, .zener-select  * {
-    scroll-behavior: unset !important;
+.zener-select,
+.zener-select * {
+  scroll-behavior: unset !important;
 }
 
-.zener-select svg{
-    display: block;
+.zener-select svg {
+  display: block;
 }
 
-.zener-select button{
-    cursor: pointer;
-    -webkit-appearance: button;
-    background-color: transparent;
-    background-image: none;
+.zener-select button {
+  cursor: pointer;
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
 }
 
-.zener-select input, .zener-select button{
-    font-family: inherit;
-    /* 1 */
-    -webkit-font-feature-settings: inherit;
-            font-feature-settings: inherit;
-    /* 1 */
-    font-variation-settings: inherit;
-    /* 1 */
-    font-size: 100%;
-    /* 1 */
-    font-weight: inherit;
-    /* 1 */
-    line-height: inherit;
-    /* 1 */
-    color: inherit;
-    /* 1 */
-    margin: 0;
-    /* 2 */
-    padding: 0;
-    /* 3 */
+.zener-select input,
+.zener-select button {
+  font-family: inherit;
+  /* 1 */
+  -webkit-font-feature-settings: inherit;
+  font-feature-settings: inherit;
+  /* 1 */
+  font-variation-settings: inherit;
+  /* 1 */
+  font-size: 100%;
+  /* 1 */
+  font-weight: inherit;
+  /* 1 */
+  line-height: inherit;
+  /* 1 */
+  color: inherit;
+  /* 1 */
+  margin: 0;
+  /* 2 */
+  padding: 0;
+  /* 3 */
 }
 
 @tailwind utilities;

@@ -2,31 +2,34 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/react-in-jsx-scope */
-import { Portal } from '@radix-ui/react-portal';
-import { AnimatePresence, AnimationProps, motion } from 'framer-motion';
-import List, { ListRef } from 'rc-virtual-list';
+import { AnimationProps } from 'framer-motion';
 import {
-  Dispatch,
+  Key,
   KeyboardEvent,
   ReactNode,
-  SetStateAction,
+  TouchEventHandler,
+  UIEventHandler,
+  WheelEventHandler,
   useEffect,
   useRef,
   useState,
 } from 'react';
+import { VirtualizerHandle } from 'virtua';
 import CloseIcon from './close-icon';
 import DropdownIcon from './dropdown-icon';
 import type { IGroupOption, IOption } from './option';
-import OptionRenderer, { IOptionItem } from './option-renderer';
+import { IOptionItem } from './option-renderer';
 import Tag from './tag';
 import { cn } from './utils';
 import Loading from './loading';
 import useTypehead from './typeahead';
+import useActiveIndex, { ActiveIndexProvider } from './use-active-index';
+import VirtualList from './virtual-list';
 
 const creatableSignatureLabel = '47ea1738-6a8e-4d87-88c1-f19e291d604e';
 const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
 
-type ISelectedOption<T extends Record<string, any>> =
+export type ISelectedOption<T extends Record<string, any>> =
   | {
       label: string;
       value: string;
@@ -47,6 +50,7 @@ export type ITagRender = {
   remove: (value: string) => void;
   value: string;
   label: string;
+  key?: Key;
 };
 
 export type ISuffixRender = {
@@ -62,7 +66,6 @@ export type IMenuItemRender = IOptionItem;
 
 export interface ISelect<T, U> {
   options: () => Promise<T & (IOption[] | IGroupOption<IOption[] | T>[])>;
-  virtual?: boolean;
   noOptionMessage?: ReactNode;
   disableWhileLoading?: boolean;
   placeholder?: ReactNode;
@@ -93,6 +96,10 @@ export interface ISelect<T, U> {
   createLabel?: string;
   tabIndex?: number;
   noMenu?: boolean;
+  onWheel?: WheelEventHandler<HTMLDivElement>;
+  onTouchMove?: TouchEventHandler<HTMLDivElement>;
+  onScroll?: UIEventHandler<HTMLDivElement>;
+  maxMenuHeight?: number;
 }
 
 const getPosition = (target: HTMLDivElement) => {
@@ -105,42 +112,11 @@ const getPosition = (target: HTMLDivElement) => {
   };
 };
 
-const navigateItem = ({
-  nextItem,
-  currentItem,
-  menuItemRender,
-  listRef,
-  setHoveredElement,
-}: {
-  nextItem: Element | null;
-  currentItem: Element | null;
-  menuItemRender: ISelect<null, null>['menuItemRender'];
-  listRef: ListRef | null;
-  setHoveredElement: Dispatch<SetStateAction<Element | undefined>>;
-}) => {
-  if (nextItem) {
-    currentItem?.removeAttribute('focused');
-    nextItem.setAttribute('focused', 'true');
-    setHoveredElement(nextItem);
-
-    if (!menuItemRender) {
-      const data = nextItem?.getAttribute('data-value') || '';
-      const dataType = nextItem.getAttribute('data-type') || 'string';
-      listRef?.scrollTo({
-        key: dataType === 'number' ? parseInt(data, 10) : data,
-        align: 'auto',
-      });
-    }
-  }
-};
-
-const Select = <T, U extends boolean | undefined = undefined>({
+const SelectComponent = <T, U extends boolean | undefined = undefined>({
   options,
   multiple = false,
   disabled = false,
-  virtual = true,
   open = undefined,
-  noOptionMessage,
   disableWhileLoading,
   creatable = false,
   suffixRender,
@@ -148,34 +124,32 @@ const Select = <T, U extends boolean | undefined = undefined>({
   portalClass,
   menuClass,
   tagRender,
-  animation,
   onChange,
   value,
   menuItemRender,
   placeholder,
   className,
   valueRender,
-  groupRender,
   onOpenChange,
   onSearch,
   searchable = true,
-  createLabel,
   tabIndex,
   noMenu,
+  createLabel,
+  animation,
+  noOptionMessage,
+  groupRender,
+  onScroll,
+  onWheel,
+  onTouchMove,
+  maxMenuHeight,
 }: ISelect<T, U>) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const selectContainerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<ListRef>(null);
+  const listRef = useRef<VirtualizerHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [inputBounding, setInputBounding] = useState({
-    left: 0,
-    top: 0,
-    height: 0,
-    width: 0,
-  });
   const [show, setShow] = useState(false);
-  const [offsetVertical] = useState(5);
   const [loading, setLoading] = useState(false);
 
   const [isDisabled, setIsDisabled] = useState(false);
@@ -192,15 +166,20 @@ const Select = <T, U extends boolean | undefined = undefined>({
 
   const [inputText, setInputText] = useState('');
 
-  const [hoveredElement, setHoveredElement] = useState<Element>();
-
-  const [enterPressed, setEnterPressed] = useState(false);
-  const [focusedElement, setFocusedElement] = useState('');
   const [filterable, setFilterable] = useState(searchable);
 
   const hiddenTextRef = useRef<HTMLDivElement>(null);
-  const currentItemPositionRef = useRef<number>(0);
 
+  const { activeIndex, setActiveIndex } = useActiveIndex();
+
+  const [inputBounding, setInputBounding] = useState({
+    left: 0,
+    top: 0,
+    height: 0,
+    width: 0,
+  });
+
+  // this is for setting the selected value when value is passed from props
   useEffect(() => {
     if (!value) {
       setSelectedOption([]);
@@ -263,67 +242,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
       setSelectedOption([{ label: value, value }]);
   }, [flatOptions, value]);
 
-  useEffect(() => {
-    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
-    const resizeListener = () => {
-      if (selectContainerRef && selectContainerRef.current) {
-        setInputBounding(getPosition(selectContainerRef.current));
-      }
-    };
-    window.addEventListener('resize', resizeListener);
-
-    return () => {
-      window.removeEventListener('resize', resizeListener);
-    };
-  }, []);
-
-  useEffect(() => {
-    const optionItem = dialogRef.current?.querySelector(
-      '.option-item-container[focused]',
-    );
-    if (optionItem) {
-      setHoveredElement(optionItem);
-    }
-  }, [focusedElement]);
-
-  const makeItemActive = () => {
-    if (portalRef.current) {
-      const hoveredEl = portalRef.current.querySelectorAll(
-        '.option-item-container',
-      );
-      hoveredEl.forEach((hl, index) => {
-        if (index === 0) {
-          hl.setAttribute('focused', 'true');
-          setHoveredElement(hl);
-        } else {
-          hl.removeAttribute('focused');
-        }
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (!show) {
-      setInputText('');
-    }
-    if (show) {
-      if (selectedOption.length > 0) {
-        scrollToSelected(selectedOption[0].value);
-      }
-      setTimeout(() => {
-        listRef.current?.scrollTo({
-          index: currentItemPositionRef.current,
-          align: 'top',
-        });
-        makeItemActive();
-        inputRef.current?.focus();
-      }, 0);
-    }
-
-    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
-    onOpenChange?.(show);
-  }, [show]);
-
+  // when the options changes this makes sure the options are flattend if in group mode
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -351,6 +270,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
     })();
   }, [options]);
 
+  // for filtering the options
   useEffect(() => {
     if (creatable || filterable) {
       try {
@@ -379,25 +299,27 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   }, [inputText, filterable, flatOptions, creatable]);
 
+  // handle resizing of menu bounds
   useEffect(() => {
-    makeItemActive();
-  }, [filteredOptions]);
+    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
+    const resizeListener = () => {
+      if (selectContainerRef && selectContainerRef.current) {
+        setInputBounding(getPosition(selectContainerRef.current));
+      }
+    };
+    window.addEventListener('resize', resizeListener);
 
-  useEffect(() => {
-    const holder = portalRef.current?.querySelector(
-      '.rc-virtual-list-holder',
-    ) as HTMLDivElement;
-    if (holder) {
-      holder.style.maxHeight = '200px';
-      holder.style.height = 'auto';
-    }
-  }, [portalRef.current]);
+    return () => {
+      window.removeEventListener('resize', resizeListener);
+    };
+  }, []);
 
   // get value based on multiple or single selection
   const getVal = (data: ISelectedOption<IOption>[]) => {
     return (multiple ? data : data?.[0]) as any;
   };
 
+  // remove tags items if multiple is enabled
   const removeTag = (tag: string) => {
     const val = getVal(selectedOption.filter((so) => so.value !== tag));
     setSelectedOption(val);
@@ -405,27 +327,13 @@ const Select = <T, U extends boolean | undefined = undefined>({
     onChange?.(val as any, val?.map((v) => v.value) || ([] as any));
     selectContainerRef.current?.focus();
     inputRef.current?.focus();
-
-    if (Array.isArray(val) && val.length > 0) scrollToSelected(val?.[0].value);
-    else currentItemPositionRef.current = 0;
   };
 
   const [w, setW] = useState(4);
 
   useEffect(() => {
     setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0));
-    listRef.current?.scrollTo({
-      index: 0,
-      align: 'top',
-    });
   }, [inputText]);
-
-  // set the bounding rect of menu
-  useEffect(() => {
-    if (selectContainerRef && selectContainerRef.current) {
-      setInputBounding(getPosition(selectContainerRef.current));
-    }
-  }, [inputText, w, selectedOption]);
 
   // set disable state for select
   useEffect(() => {
@@ -433,7 +341,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
     selectContainerRef.current?.setAttribute('disabled', `${disabled}`);
   }, [disabled, disableWhileLoading, loading]);
 
-  // make menu hidden if disabled
+  // make sure the menu hidden if disabled while opening
   useEffect(() => {
     if (isDisabled) {
       setShow(false);
@@ -442,21 +350,12 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   }, [open, isDisabled]);
 
-  useEffect(() => {
-    if (menuItemRender && hoveredElement) {
-      const data = hoveredElement.getAttribute('data-value') || '';
-      const dataType = hoveredElement.getAttribute('data-type') || 'string';
-      listRef.current?.scrollTo({
-        key: dataType === 'number' ? parseInt(data, 10) : data,
-        align: 'auto',
-      });
-    }
-  }, [hoveredElement, menuItemRender]);
-
+  // set focus on input container
   const setFocus = () => {
     if (isDisabled) {
       return;
     }
+
     if (className && typeof className === 'function' && !!className().focus) {
       selectContainerRef.current?.classList.add(
         ...(className().focus?.split(' ') || ['']),
@@ -464,6 +363,7 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   };
 
+  // remove focus from input container
   const removeFocus = () => {
     if (className && typeof className === 'function' && !!className().focus) {
       selectContainerRef.current?.classList.remove(
@@ -475,30 +375,37 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   };
 
-  const closeList = () => {
+  // close the menu
+  const closeMenu = () => {
     if (open === undefined) {
       setShow(false);
     }
   };
 
+  // clear the selected values and close the list
   const onClear = () => {
     setSelectedOption([]);
     onChange?.([] as any, [] as any);
     inputRef.current?.focus();
-    closeList();
-    currentItemPositionRef.current = 0;
+    closeMenu();
+    setActiveIndex(0);
   };
 
-  const scrollToSelected = (val: string) => {
-    let currentIndex = currentItemPositionRef.current;
-    // @ts-ignore
-    currentIndex = flatOptions.findIndex(
-      (fo) =>
-        // @ts-ignore
-        fo.value === val,
-    );
-    currentItemPositionRef.current = currentIndex;
-  };
+  // clear input text and trigger openchange
+  useEffect(() => {
+    if (!show) {
+      setInputText('');
+    }
+    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
+    onOpenChange?.(show);
+  }, [show]);
+
+  // set the bounding rect of menu
+  useEffect(() => {
+    if (selectContainerRef && selectContainerRef.current) {
+      setInputBounding(getPosition(selectContainerRef.current));
+    }
+  }, [inputText, w, selectedOption]);
 
   // typeahead feature
   const { selectedIndex } = useTypehead({
@@ -507,35 +414,16 @@ const Select = <T, U extends boolean | undefined = undefined>({
     enabled: !creatable && !searchable && show,
   });
 
+  // on typeahead search select the searched item.
   useEffect(() => {
-    listRef.current?.scrollTo({
-      index: selectedIndex,
-      align: 'auto',
-    });
-
-    setTimeout(() => {
-      if (portalRef.current) {
-        const hoveredEl = portalRef.current.querySelectorAll(
-          '.option-item-container',
-        );
-        hoveredEl.forEach((hl) => {
-          if (
-            `${hl.getAttribute('data-value')}` ===
-            `${filteredOptions[selectedIndex]?.value}`
-          ) {
-            hl.setAttribute('focused', 'true');
-            setHoveredElement(hl);
-          } else {
-            hl.removeAttribute('focused');
-          }
-        });
-      }
-    }, 50);
+    if (selectedIndex >= 0) {
+      setActiveIndex(selectedIndex);
+      listRef.current?.scrollToIndex(selectedIndex, { align: 'nearest' });
+    }
   }, [selectedIndex]);
 
   // no menu option
   const handleNoMenuMode = (e: KeyboardEvent) => {
-    console.log(selectedOption);
     if (e.key === 'Enter' && inputText && creatable && noMenu) {
       if (
         selectedOption.find(
@@ -568,508 +456,446 @@ const Select = <T, U extends boolean | undefined = undefined>({
     }
   };
 
-  return (
-    <>
-      <div
-        tabIndex={tabIndex || (searchable || creatable ? -1 : 0)}
-        ref={selectContainerRef}
-        className={cn(
-          'zener-select zener-relative zener-flex zener-flex-row zener-items-center pulsable',
-          {
-            'zener-text-black/25 zener-bg-black/5 zener-border-stone-100':
-              !className && isDisabled,
-          },
-          className && typeof className === 'function'
-            ? `${isDisabled ? className().disabled : className().default}`
-            : className ||
-                'zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400',
-        )}
-        onClick={(e) => {
-          if (isDisabled) {
-            e.preventDefault();
-            return;
-          }
-          if (!isDisabled) {
-            if (show) {
-              closeList();
-            } else {
-              setShow(true);
-            }
-            inputRef.current?.focus();
-          }
-        }}
-        onBlur={(e) => {
-          if (isDisabled) {
-            return;
-          }
-          removeFocus();
-          if (
-            !portalRef?.current?.contains(e.relatedTarget) &&
-            !selectContainerRef.current?.contains(e.relatedTarget) &&
-            show
-          ) {
-            closeList();
-          }
-        }}
-        onFocus={() => {
-          if (isDisabled) {
-            return;
-          }
-          setFocus();
-        }}
-        onKeyDown={(e) => {
-          if (isDisabled) {
-            return;
-          }
-          const { key } = e;
+  const getItem = (value: string) =>
+    selectedOption.find((so) => so.value === value);
 
-          if (['ArrowUp', 'ArrowDown'].includes(key)) {
+  const isActive = (value: string) =>
+    multiple ? !!getItem(value) : value === selectedOption[0]?.value;
+
+  const isMultipleItemExists = (value: string) => !!getItem(value) && multiple;
+
+  const handleKeyboardNavigation = (e: KeyboardEvent) => {
+    const { key, metaKey } = e;
+    let nextIndex = activeIndex;
+    if (key === 'ArrowDown') {
+      nextIndex = Math.min(filteredOptions.length - 1, nextIndex + 1);
+      if (metaKey) {
+        nextIndex = filteredOptions.length - 1;
+      }
+    } else if (key === 'ArrowUp') {
+      nextIndex = Math.max(0, nextIndex - 1);
+      if (metaKey) {
+        nextIndex = 0;
+      }
+    } else {
+      return;
+    }
+
+    listRef.current?.scrollToIndex(nextIndex, {
+      align: 'nearest',
+    });
+
+    setActiveIndex(nextIndex);
+  };
+
+  // on menu item clicked set it as selected if not already selected else deselect it.
+  const onItemClicked = (data: any) => {
+    const { value: dvalue } = data;
+    const selectValue = { ...data };
+    delete selectValue.group;
+    delete selectValue.groupMode;
+    delete selectValue.render;
+
+    if (disabled) {
+      return;
+    }
+
+    inputRef.current?.focus();
+    // @ts-ignore
+    let val;
+
+    if (getItem(dvalue)) {
+      val = selectedOption.filter((v) => v.value !== dvalue);
+      if (creatable) {
+        setSelectedOption(val);
+      }
+    } else if (!multiple) {
+      val = selectValue;
+      if (creatable) {
+        setSelectedOption([val]);
+      }
+
+      closeMenu();
+    } else {
+      val = [...selectedOption, selectValue];
+      if (creatable) {
+        setSelectedOption(val);
+      }
+    }
+
+    onChange?.(
+      val as any,
+      // @ts-ignore
+      (multiple
+        ? // @ts-ignore
+
+          val?.map((v) => v.value)
+        : // @ts-ignore
+          val?.value) as any,
+    );
+
+    if (creatable && filteredOptions.length === 1 && inputText !== '') {
+      closeMenu();
+    }
+
+    setInputText('');
+    if (!(filterable || searchable || creatable)) {
+      selectContainerRef.current?.focus();
+    }
+    inputRef.current?.focus();
+
+    if (!multiple && !disabled) {
+      closeMenu();
+    }
+  };
+
+  return (
+    <div
+      tabIndex={tabIndex || (searchable || creatable ? -1 : 0)}
+      ref={selectContainerRef}
+      className={cn(
+        'zener-select zener-relative zener-flex zener-flex-row zener-items-center pulsable',
+        {
+          'zener-text-black/25 zener-bg-black/5 zener-border-stone-100':
+            !className && isDisabled,
+        },
+        className && typeof className === 'function'
+          ? `${isDisabled ? className().disabled : className().default}`
+          : className ||
+              `${!isDisabled ? 'focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400' : ''} zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none`,
+      )}
+      onClick={(e) => {
+        if (isDisabled) {
+          e.preventDefault();
+          return;
+        }
+        if (!isDisabled) {
+          if (show) {
+            closeMenu();
+          } else {
+            setShow(true);
+          }
+          inputRef.current?.focus();
+        }
+      }}
+      onBlur={(e) => {
+        if (isDisabled) {
+          return;
+        }
+        removeFocus();
+        if (
+          !portalRef?.current?.contains(e.relatedTarget) &&
+          !selectContainerRef.current?.contains(e.relatedTarget) &&
+          show
+        ) {
+          closeMenu();
+        }
+      }}
+      onFocus={() => {
+        if (isDisabled) {
+          return;
+        }
+        setFocus();
+      }}
+      onKeyDown={(e) => {
+        if (isDisabled) {
+          return;
+        }
+        const { code, ctrlKey } = e;
+
+        switch (code) {
+          case 'Enter':
+            {
+              e.preventDefault();
+              const item = filteredOptions.at(activeIndex);
+              if (item) {
+                onItemClicked(item);
+              }
+            }
+            break;
+          case 'ArrowUp':
+          case 'ArrowDown':
             e.preventDefault();
             if (!show) {
               setShow(true);
+              break;
             }
-
-            const optionItem = dialogRef.current?.querySelector(
-              '.option-item-container[focused]',
-            );
-            if (optionItem) {
-              if (key === 'ArrowDown') {
-                const item = optionItem.nextElementSibling;
-                navigateItem({
-                  nextItem: item,
-                  currentItem: optionItem,
-                  menuItemRender,
-                  listRef: listRef.current,
-                  setHoveredElement,
-                });
-              } else if (key === 'ArrowUp') {
-                const item = optionItem.previousElementSibling;
-                navigateItem({
-                  nextItem: item,
-                  currentItem: optionItem,
-                  menuItemRender,
-                  listRef: listRef.current,
-                  setHoveredElement,
-                });
+            handleKeyboardNavigation(e);
+            break;
+          case 'Space':
+            if (ctrlKey) {
+              e.preventDefault();
+              if (show) {
+                setShow(false);
+              } else {
+                setShow(true);
               }
-            } else {
-              makeItemActive();
             }
-          }
-
-          if (e.code === 'Space' && e.ctrlKey) {
-            setShow(true);
-          }
-
-          if (key === 'Enter' && show) {
-            e.stopPropagation();
+            break;
+          case 'Escape':
             e.preventDefault();
-            setEnterPressed((prev) => !prev);
-          }
-
-          if (key === 'Escape') {
-            closeList();
-          }
-        }}
+            closeMenu();
+            break;
+          default:
+            break;
+        }
+      }}
+    >
+      <div
+        className={cn(
+          'zener-flex-1 zener-overflow-hidden zener-relative',
+          'zener-flex zener-flex-row zener-items-center zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px] zener-h-full',
+          {
+            'zener-flex-wrap': multiple,
+            'zener-flex-1': !multiple,
+            'zener-cursor-text': (searchable || !!creatable) && !isDisabled,
+          },
+          multiple && selectedOption.length > 0 ? '-zener-ml-1' : '',
+        )}
       >
-        <div
-          className={cn(
-            'zener-flex-1 zener-overflow-hidden zener-relative',
-            'zener-flex zener-flex-row zener-items-center zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px] zener-h-full',
-            {
-              'zener-flex-wrap': multiple,
-              'zener-flex-1': !multiple,
-              'zener-cursor-text': (searchable || !!creatable) && !isDisabled,
-            },
-            multiple && selectedOption.length > 0 ? '-zener-ml-1' : '',
-          )}
-        >
-          {/* Tag section for multiple selection mode */}
+        {/* Tag section for multiple selection mode */}
 
-          {multiple &&
-            selectedOption.map(
-              (so) =>
-                (tagRender &&
-                  tagRender?.({
-                    label: so.label,
-                    value: so.value,
-                    remove: removeTag,
-                  })) || (
-                  <Tag
-                    key={so.value}
-                    disabled={isDisabled}
-                    value={so.value}
-                    onClose={(value) => {
-                      removeTag(value);
-                    }}
-                  >
-                    {so.label}
-                  </Tag>
-                ),
-            )}
-
-          {/* Single selection value */}
-          {!multiple && selectedOption.length > 0 && (
-            <div
-              className={cn('zener-flex zener-items-center zener-min-w-0', {
-                'zener-transition-all': show,
-                'zener-opacity-30': show && !open && !noMenu,
-                'zener-hidden': !!inputText,
-                'zener-w-full': !(creatable || searchable),
-              })}
-            >
-              <div
-                className={cn({
-                  'zener-truncate zener-w-full': !multiple,
-                })}
-              >
-                {valueRender
-                  ? valueRender?.(selectedOption[0] as any)
-                  : selectedOption[0].label}
-              </div>
-            </div>
-          )}
-
-          {/* Placeholder */}
-
-          {selectedOption.length > 0 ? null : typeof placeholder ===
-            'string' ? (
-            <div
-              className={cn(
-                'zener-text-black/20 zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
-                placeholder && !inputText && selectedOption.length === 0
-                  ? 'zener-opacity-100'
-                  : 'zener-opacity-0',
-              )}
-            >
-              {placeholder}
-            </div>
-          ) : (
-            <div
-              className={cn(
-                'zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
-                placeholder && !inputText && selectedOption.length === 0
-                  ? 'zener-opacity-100'
-                  : 'zener-opacity-0',
-              )}
-            >
-              {placeholder}
-            </div>
-          )}
-
-          {/* Input field for filterable or creatable mode */}
-
-          {(searchable || creatable) && (
-            <div
-              className={cn('zener-max-w-full', {
-                'zener-absolute zener-inset-0 zener-flex-1': !multiple,
-              })}
-            >
-              <div
-                ref={hiddenTextRef}
-                className="zener-invisible zener-h-0 zener-overflow-hidden zener-w-fit zener-whitespace-pre"
-              >
-                {inputText}
-              </div>
-              <div
-                style={{
-                  width: Math.max(
-                    4,
-                    (hiddenTextRef.current?.clientWidth || 0) + 20,
-                  ),
-                }}
-                className={cn('zener-max-w-full zener-h-full', {
-                  'zener-flex zener-items-center': !multiple,
-                })}
-              >
-                <input
-                  tabIndex={tabIndex}
+        {multiple &&
+          selectedOption.map(
+            (so) =>
+              (tagRender &&
+                tagRender?.({
+                  label: so.label,
+                  value: so.value,
+                  remove: removeTag,
+                  key: so.value,
+                })) || (
+                <Tag
+                  key={so.value}
                   disabled={isDisabled}
-                  autoComplete="off"
-                  ref={inputRef}
-                  onPaste={() => {
-                    setShow(true);
+                  value={so.value}
+                  onClose={(value) => {
+                    removeTag(value);
                   }}
-                  onFocus={() => {
-                    setFocus();
-                  }}
-                  onBlur={() => {
-                    removeFocus();
-                  }}
-                  onKeyDown={(e: KeyboardEvent) => {
-                    const key = e.key || `${e.keyCode}`;
-
-                    if (
-                      !inputText &&
-                      key === 'Backspace' &&
-                      multiple &&
-                      (searchable || creatable)
-                    ) {
-                      const val = selectedOption.slice(
-                        0,
-                        selectedOption.length - 1,
-                      );
-
-                      setSelectedOption(val);
-
-                      onChange?.(val as any, val.map((v) => v.value) as any);
-                    }
-
-                    if (e.code === 'Space' && e.ctrlKey) {
-                      setShow(true);
-                    }
-                  }}
-                  onKeyUp={(e: KeyboardEvent) => {
-                    const reg = /^[0-9a-zA-Z\\@#$-/:-?{-~!"^_`\[\]]+$/;
-                    if (!show && inputRef.current?.value.match(reg)) {
-                      setShow(true);
-                    }
-                    handleNoMenuMode(e);
-                  }}
-                  className={cn(
-                    'zener-outline-none min-w-[4.1px] zener-bg-transparent zener-h-full zener-border-0',
-                    {
-                      'zener-w-full ': multiple,
-                    },
-                    {
-                      'zener-absolute zener-inset-0':
-                        !multiple && (searchable || !!creatable),
-                    },
-                  )}
-                  value={inputText}
-                  onChange={({ target }) => {
-                    setInputText(target.value);
-                    if (!searchable) {
-                      setFilterable(false);
-                    } else {
-                      setFilterable(onSearch?.(target.value) !== false);
-                    }
-                  }}
-                />
-              </div>
-            </div>
+                >
+                  {so.label}
+                </Tag>
+              ),
           )}
-        </div>
 
-        {/* Suffix aka clear and dropdown icon */}
-
-        {suffixRender?.({
-          clear: onClear,
-          isOpen: show,
-          showclear,
-          loading,
-        }) || (
+        {/* Single selection value */}
+        {!multiple && selectedOption.length > 0 && (
           <div
-            tabIndex={-1}
-            className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
+            className={cn('zener-flex zener-items-center zener-min-w-0', {
+              'zener-transition-all': show,
+              'zener-opacity-30': show && !open && !noMenu,
+              'zener-hidden': !!inputText,
+              'zener-w-full': !(creatable || searchable),
+            })}
           >
-            <Loading loading={loading && !show} />
-            {showclear && !isDisabled && selectedOption.length > 0 && (
-              <button
-                aria-label="clear"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClear();
-                }}
-                tabIndex={-1}
-                className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
-              >
-                <CloseIcon size={16} />
-              </button>
+            <div
+              className={cn({
+                'zener-truncate zener-w-full': !multiple,
+              })}
+            >
+              {valueRender
+                ? valueRender?.(selectedOption[0] as any)
+                : selectedOption[0].label}
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder */}
+
+        {selectedOption.length > 0 ? null : typeof placeholder === 'string' ? (
+          <div
+            className={cn(
+              'zener-text-black/20 zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
+              placeholder && !inputText && selectedOption.length === 0
+                ? 'zener-opacity-100'
+                : 'zener-opacity-0',
             )}
-            <DropdownIcon size={18} />
+          >
+            {placeholder}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
+              placeholder && !inputText && selectedOption.length === 0
+                ? 'zener-opacity-100'
+                : 'zener-opacity-0',
+            )}
+          >
+            {placeholder}
+          </div>
+        )}
+
+        {/* Input field for filterable or creatable mode */}
+
+        {(searchable || creatable) && (
+          <div
+            className={cn('zener-max-w-full', {
+              'zener-absolute zener-inset-0 zener-flex-1': !multiple,
+            })}
+          >
+            <div
+              ref={hiddenTextRef}
+              className="zener-invisible zener-h-0 zener-overflow-hidden zener-w-fit zener-whitespace-pre"
+            >
+              {inputText}
+            </div>
+            <div
+              style={{
+                width: Math.max(
+                  4,
+                  (hiddenTextRef.current?.clientWidth || 0) + 20,
+                ),
+              }}
+              className={cn('zener-max-w-full zener-h-full', {
+                'zener-flex zener-items-center': !multiple,
+              })}
+            >
+              <input
+                tabIndex={tabIndex}
+                disabled={isDisabled}
+                autoComplete="off"
+                ref={inputRef}
+                onPaste={() => {
+                  setShow(true);
+                }}
+                onFocus={() => {
+                  setFocus();
+                }}
+                onBlur={() => {
+                  removeFocus();
+                }}
+                onKeyDown={(e: KeyboardEvent) => {
+                  const { code, ctrlKey } = e;
+
+                  if (
+                    !inputText &&
+                    code === 'Backspace' &&
+                    multiple &&
+                    (searchable || creatable)
+                  ) {
+                    const val = selectedOption.slice(
+                      0,
+                      selectedOption.length - 1,
+                    );
+
+                    setSelectedOption(val);
+
+                    onChange?.(val as any, val.map((v) => v.value) as any);
+                  }
+
+                  if (code === 'Space' && ctrlKey) {
+                    setShow(true);
+                  }
+                }}
+                onKeyUp={(e: KeyboardEvent) => {
+                  const reg = /^[0-9a-zA-Z\\@#$-/:-?{-~!"^_`\[\]]+$/;
+                  if (!show && inputRef.current?.value.match(reg)) {
+                    setShow(true);
+                  }
+                  handleNoMenuMode(e);
+                }}
+                className={cn(
+                  'zener-outline-none min-w-[4.1px] zener-bg-transparent zener-h-full zener-border-0',
+                  {
+                    'zener-w-full ': multiple,
+                  },
+                  {
+                    'zener-absolute zener-inset-0':
+                      !multiple && (searchable || !!creatable),
+                  },
+                )}
+                value={inputText}
+                onChange={({ target }) => {
+                  setInputText(target.value);
+                  setActiveIndex(0);
+                  if (!searchable) {
+                    setFilterable(false);
+                  } else {
+                    setFilterable(onSearch?.(target.value) !== false);
+                  }
+                }}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Popup list section */}
+      {/* Suffix aka clear and dropdown icon */}
 
-      <AnimatePresence>
-        {show && !noMenu && (
-          <Portal
-            ref={portalRef}
-            tabIndex={-1}
-            className={cn(
-              'react-select-portal zener-pointer-events-auto',
-              portalClass ||
-                'zener-absolute zener-z-[9999999999999999999] zener-font-sans',
-              'zener-select',
-            )}
-            onFocus={() => {
-              inputRef.current?.focus();
-            }}
-            style={{
-              left: inputBounding.left,
-              top: inputBounding.top + inputBounding.height + offsetVertical,
-              minWidth: inputBounding.width,
-              maxWidth: inputBounding.width,
-            }}
-          >
-            <motion.div
+      {suffixRender?.({
+        clear: onClear,
+        isOpen: show,
+        showclear,
+        loading,
+      }) || (
+        <div
+          tabIndex={-1}
+          className="zener-mx-1.5 zener-flex zener-flex-row zener-items-center gap-2 min-h-[24px] zener-opacity-40"
+        >
+          <Loading loading={loading && !show} />
+          {showclear && !isDisabled && selectedOption.length > 0 && (
+            <button
+              aria-label="clear"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+              }}
               tabIndex={-1}
-              className={cn(
-                'relative zener-z-[99999999999999999999] react-select-dialog zener-flex zener-flex-col ',
-                menuClass ||
-                  'zener-bg-white zener-rounded-lg zener-p-1 zener-shadow-menu',
-              )}
-              {...(animation ||
-                (animation === null
-                  ? {}
-                  : {
-                      initial: { opacity: 0, translateY: -5 },
-                      animate: { opacity: 1, translateY: 0 },
-                      exit: { opacity: 0, translateY: -5 },
-                      transition: { duration: 0.2 },
-                    }))}
-              ref={dialogRef}
+              className="zener-outline-none zener-border-0 zener-opacity-80 hover:zener-opacity-100 zener-transition-all min-h-[24px]"
             >
-              <List
-                data={filteredOptions}
-                itemKey="value"
-                fullHeight={false}
-                virtual={virtual}
-                height={200}
-                itemHeight={30}
-                tabIndex={-1}
-                ref={listRef}
-                className="zener-select"
-              >
-                {(data) => {
-                  const { label, value, render, group, groupMode, disabled } =
-                    data;
-                  const selectValue = { ...data };
-                  delete selectValue.group;
-                  delete selectValue.groupMode;
-                  delete selectValue.render;
+              <CloseIcon size={16} />
+            </button>
+          )}
+          <DropdownIcon size={18} />
+        </div>
+      )}
 
-                  const findElement = selectedOption.find(
-                    (so) => so.value === value,
-                  );
+      {/* Popup list section */}
+      <VirtualList
+        loading={loading}
+        bounds={inputBounding}
+        noOptionMessage={noOptionMessage}
+        createLabel={createLabel}
+        animation={animation}
+        groupRender={groupRender}
+        menuRenderer={menuItemRender}
+        ref={listRef}
+        portalRef={portalRef}
+        dialogRef={dialogRef}
+        show={show && !noMenu}
+        isActive={(v) => isActive(v)}
+        isMultipleItemExists={(v) => isMultipleItemExists(v)}
+        portalClass={portalClass}
+        menuClass={menuClass}
+        onClick={onItemClicked}
+        onListFocus={() => {
+          if (!(filterable || searchable || creatable)) {
+            selectContainerRef.current?.focus();
+          }
+          inputRef.current?.focus();
+        }}
+        onPortalFocus={() => {
+          inputRef.current?.focus();
+        }}
+        options={filteredOptions}
+        selectedOption={selectedOption}
+        onWheel={onWheel}
+        onScroll={onScroll}
+        onTouchMove={onTouchMove}
+        maxMenuHeight={maxMenuHeight}
+      />
+    </div>
+  );
+};
 
-                  const isActive = multiple
-                    ? !!findElement
-                    : value === selectedOption[0]?.value;
-
-                  return (
-                    <OptionRenderer
-                      disabled={disabled}
-                      groupRender={groupRender}
-                      groupMode={!!groupMode}
-                      itemRender={menuItemRender}
-                      group={group}
-                      onFocusChanges={() => setFocusedElement(value)}
-                      enterPressed={enterPressed}
-                      hoveredElement={hoveredElement}
-                      active={isActive}
-                      onClick={() => {
-                        if (disabled) {
-                          return;
-                        }
-
-                        inputRef.current?.focus();
-                        // @ts-ignore
-                        let val;
-
-                        if (!multiple) {
-                          val = selectValue;
-                          if (creatable) {
-                            setSelectedOption([val]);
-                          }
-                          closeList();
-                        } else if (findElement) {
-                          val = selectedOption.filter((v) => v.value !== value);
-                          if (creatable) {
-                            setSelectedOption(val);
-                          }
-                        } else {
-                          val = [...selectedOption, selectValue];
-                          if (creatable) {
-                            setSelectedOption(val);
-                          }
-                        }
-
-                        onChange?.(
-                          val as any,
-                          // @ts-ignore
-                          (multiple
-                            ? // @ts-ignore
-
-                              val?.map((v) => v.value)
-                            : // @ts-ignore
-                              val?.value) as any,
-                        );
-
-                        // for auto scrolling to first selected element
-
-                        if (
-                          creatable &&
-                          filteredOptions.length === 1 &&
-                          inputText !== ''
-                        ) {
-                          closeList();
-                        }
-
-                        setInputText('');
-                        if (!(filterable || searchable || creatable)) {
-                          selectContainerRef.current?.focus();
-                        }
-                        inputRef.current?.focus();
-
-                        if (!multiple && !disabled) {
-                          closeList();
-                        }
-                      }}
-                      onFocus={(e) => {
-                        e.preventDefault();
-                        if (!(filterable || searchable || creatable)) {
-                          selectContainerRef.current?.focus();
-                        }
-                        inputRef.current?.focus();
-                      }}
-                      render={
-                        render ||
-                        (() => {
-                          if (
-                            // @ts-ignore
-                            data?.[creatableSignatureLabel] ===
-                            creatableSignatureValue
-                          ) {
-                            if (findElement?.value === data.value && multiple) {
-                              return `${label}`;
-                            }
-
-                            if (createLabel) {
-                              return `${createLabel} "${label}"`;
-                            }
-                            return `Create "${label}"`;
-                          }
-                          return label;
-                        })
-                      }
-                      label={label}
-                      value={value}
-                    />
-                  );
-                }}
-              </List>
-              {filteredOptions.length === 0 &&
-                !loading &&
-                (noOptionMessage || (
-                  <div className="zener-p-2 zener-self-center zener-text-center zener-flex zener-items-center zener-justify-center">
-                    No options
-                  </div>
-                ))}
-              {loading && filteredOptions.length === 0 && (
-                <div className="zener-p-2 zener-flex-col zener-gap-1 zener-self-center zener-text-center zener-flex zener-items-center zener-justify-center">
-                  <Loading loading={loading} />
-                  <span className="zener-text-sm">loading</span>
-                </div>
-              )}
-            </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
-    </>
+const Select = <T, U extends boolean | undefined = undefined>(
+  props: ISelect<T, U>,
+) => {
+  return (
+    <ActiveIndexProvider>
+      <SelectComponent {...props} />
+    </ActiveIndexProvider>
   );
 };
 

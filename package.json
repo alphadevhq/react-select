@@ -2,7 +2,7 @@
   "name": "@oshq/react-select",
   "author": "Bikash Ojha",
   "license": "MIT",
-  "version": "2.0.4",
+  "version": "3.0.0",
   "description": "The React Select is a minimal select component for reactjs.",
   "private": false,
   "types": "./dist/@types/index.d.ts",
@@ -54,13 +54,14 @@
     "release": "pnpm build && npm publish"
   },
   "peerDependencies": {
-    "@radix-ui/react-portal": "^1.0.4",
+    "@radix-ui/react-portal": "^1.1.1",
     "classnames": "^2.3.2",
     "framer-motion": "^10.16.4",
-    "rc-virtual-list": "^3.11.2",
-    "react": "^18.2.0 || ^17.0.0 || ^16.0.0"
+    "react": "^18.2.0 || ^17.0.0 || ^16.0.0",
+    "virtua": "^0.33.7"
   },
   "devDependencies": {
+    "@radix-ui/react-dialog": "^1.1.1",
     "@types/react": "^18.2.22",
     "@types/react-dom": "^18.2.14",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
@@ -97,5 +98,6 @@
   "bugs": {
     "url": "https://github.com/opensource-hq/react-select/issues"
   },
-  "homepage": "https://react-select.ojhabikash.com.np/"
+  "homepage": "https://react-select.ojhabikash.com.np/",
+  "dependencies": {}
 }

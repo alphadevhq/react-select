@@ -1,17 +1,19 @@
 /* eslint-disable no-nested-ternary */
-import {
-  FocusEvent,
-  ReactNode,
-  forwardRef,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { FocusEvent, ReactNode, forwardRef } from 'react';
 import { cn } from './utils';
+import useActiveIndex from './use-active-index';
 
-export type IOptionRender =
-  | string
-  | (({ active, focused }: { active: boolean; focused: boolean }) => ReactNode);
+export type IOptionRender = ({
+  active,
+  focused,
+  disabled,
+  groupMode,
+}: {
+  active: boolean;
+  focused: boolean;
+  disabled?: boolean;
+  groupMode?: boolean;
+}) => ReactNode;
 
 export type IOptionItem = {
   active?: boolean;
@@ -19,10 +21,13 @@ export type IOptionItem = {
   label: string;
   value: string;
   render: IOptionRender;
+  disabled?: boolean;
+  groupMode?: boolean;
   innerProps?: {
     group?: string | null;
     onClick: () => void;
     onMouseMove: () => void;
+    onMouseEnter: () => void;
     onFocus: (e: FocusEvent) => void;
     ref: any;
     tabIndex: number | undefined;
@@ -34,16 +39,20 @@ interface IOptionRenderer {
   onClick: () => void;
   onFocus: (e: FocusEvent) => void;
   active: boolean;
-  hoveredElement?: Element;
-  enterPressed: boolean;
-  onFocusChanges: () => void;
   group?: string | null;
   label: string;
   value: string;
   groupMode: boolean;
-  itemRender?: ({ active, focused, innerProps }: IOptionItem) => ReactNode;
+  itemRender?: ({
+    active,
+    focused,
+    disabled,
+    innerProps,
+    groupMode,
+  }: IOptionItem) => ReactNode;
   groupRender?: ({ label }: { label: string }) => ReactNode;
   disabled?: boolean;
+  index: number;
 }
 
 const OptionRenderer = forwardRef(
@@ -55,137 +64,91 @@ const OptionRenderer = forwardRef(
       active,
       onClick,
       onFocus,
-      hoveredElement,
-      enterPressed,
-      onFocusChanges,
       group,
       groupMode,
       itemRender: ItemRender,
       groupRender,
       disabled,
+      index,
     }: IOptionRenderer,
-    ref: any
+    ref: any,
   ) => {
-    // const wrapperRef = ref;
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-    const [isFocused, setIsFocused] = useState(false);
+    const { activeIndex, setActiveIndex } = useActiveIndex();
+    const focused = activeIndex === index;
 
-    const handleFocus = () => {
-      if (disabled) {
-        return;
-      }
-
-      const siblings = wrapperRef.current?.parentNode?.querySelectorAll(
-        '.option-item-container'
-      );
-
-      if (typeof render !== 'string') {
-        siblings?.forEach((sibling) => {
-          sibling.removeAttribute('focused');
-        });
-      } else {
-        siblings?.forEach((sibling) => {
-          sibling.removeAttribute('focused');
-          sibling
-            ?.querySelector('.option-item')
-            ?.classList.remove('zener-bg-gray-400/10');
-        });
-        if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
-          wrapperRef.current
-            ?.querySelector('.option-item')
-            ?.classList.add('zener-bg-gray-400/10');
-        }
-      }
-
-      wrapperRef.current?.setAttribute('focused', 'true');
-      onFocusChanges();
+    const onHover = () => {
+      setActiveIndex(index);
     };
-
-    useEffect(() => {
-      setIsFocused(!!wrapperRef.current?.hasAttribute('focused'));
-
-      if (wrapperRef.current?.hasAttribute('focused')) {
-        if (!(wrapperRef.current?.getAttribute('data-active') === 'true')) {
-          wrapperRef.current
-            ?.querySelector('.option-item')
-            ?.classList.add('zener-bg-gray-400/10');
-        }
-      } else {
-        wrapperRef.current
-          ?.querySelector('.option-item')
-          ?.classList.remove('zener-bg-gray-400/10');
-      }
-    }, [hoveredElement]);
-
-    useEffect(() => {
-      if (isFocused && !disabled) {
-        onClick();
-      }
-    }, [enterPressed]);
 
     return (
       <div
-        className="option-item-container"
-        ref={wrapperRef}
+        tabIndex={-1}
         data-value={value}
         data-active={active}
         data-disabled={disabled}
         data-type={typeof value}
       >
-        <div ref={ref} tabIndex={-1}>
-          {(group && groupRender?.({ label: group || '' })) ||
-            (group && (
-              <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
-                {group}
-              </div>
-            ))}
-          {!ItemRender && (
-            <div
-              tabIndex={-1}
-              className={cn('option-item', {
-                'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-lg zener-border-t zener-border-t-white zener-truncate ':
-                  true,
+        {(group && groupRender?.({ label: group || '' })) ||
+          (group && (
+            <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
+              {group}
+            </div>
+          ))}
+        {!ItemRender && (
+          <div
+            tabIndex={-1}
+            className={cn(
+              'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-md zener-border-t zener-border-t-white zener-truncate',
+              {
                 'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
+                'zener-mx-[5px] zener-my-[1px]': true,
                 'zener-text-gray-400': !!disabled,
                 'zener-pr-2 zener-pl-5': groupMode,
                 'zener-px-2': !groupMode,
-              })}
-              onClick={() => {
-                if (!disabled) {
-                  onClick?.();
-                }
-              }}
-              onFocus={onFocus}
-              onMouseMove={handleFocus}
-            >
-              {typeof render === 'string'
-                ? render
-                : render?.({ active, focused: isFocused })}
-            </div>
-          )}
-          {ItemRender && (
-            <ItemRender
-              {...{
-                render,
-                active,
-                label,
-                value,
-                focused: isFocused,
-                innerProps: {
-                  onClick,
-                  onMouseMove: handleFocus,
-                  group,
-                  onFocus,
-                  tabIndex: -1,
-                  ref,
+                'zener-bg-gray-400/10': focused && !active,
+              },
+            )}
+            onClick={() => {
+              if (!disabled) {
+                onClick?.();
+              }
+            }}
+            onFocus={onFocus}
+            onMouseMove={onHover}
+            onMouseEnter={onHover}
+          >
+            {render?.({ active, focused, disabled, groupMode })}
+          </div>
+        )}
+        {ItemRender && (
+          <ItemRender
+            {...{
+              render,
+              active,
+              label,
+              value,
+              focused,
+              disabled,
+              groupMode,
+              innerProps: {
+                onClick: () => {
+                  if (!disabled) {
+                    onClick?.();
+                  }
                 },
-              }}
-            />
-          )}
-        </div>
+                onMouseMove: onHover,
+                onMouseEnter: onHover,
+                group,
+                onFocus,
+                tabIndex: -1,
+                ref,
+              },
+            }}
+          />
+        )}
       </div>
     );
-  }
+  },
 );
 
 export default OptionRenderer;
