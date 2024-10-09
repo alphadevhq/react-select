@@ -25,6 +25,7 @@ import Loading from './loading';
 import useTypehead from './typeahead';
 import useActiveIndex, { ActiveIndexProvider } from './use-active-index';
 import VirtualList from './virtual-list';
+import useBounds from './use-bounds';
 
 const creatableSignatureLabel = '47ea1738-6a8e-4d87-88c1-f19e291d604e';
 const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
@@ -102,16 +103,6 @@ export interface ISelect<T, U> {
   maxMenuHeight?: number;
 }
 
-const getPosition = (target: HTMLDivElement) => {
-  const { left, top, height, width } = target.getBoundingClientRect();
-  return {
-    left: left + window.pageXOffset,
-    top: top + window.pageYOffset,
-    width,
-    height,
-  };
-};
-
 const SelectComponent = <T, U extends boolean | undefined = undefined>({
   options,
   multiple = false,
@@ -172,13 +163,15 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
 
   const { activeIndex, setActiveIndex } = useActiveIndex();
 
-  const [inputBounding, setInputBounding] = useState({
-    left: 0,
-    top: 0,
-    height: 0,
-    width: 0,
-  });
+  const [w, setW] = useState(4);
 
+  const { bounds } = useBounds(selectContainerRef, [
+    show,
+    open,
+    inputText,
+    w,
+    selectedOption,
+  ]);
   // this is for setting the selected value when value is passed from props
   useEffect(() => {
     if (!value) {
@@ -299,21 +292,6 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
     }
   }, [inputText, filterable, flatOptions, creatable]);
 
-  // handle resizing of menu bounds
-  useEffect(() => {
-    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
-    const resizeListener = () => {
-      if (selectContainerRef && selectContainerRef.current) {
-        setInputBounding(getPosition(selectContainerRef.current));
-      }
-    };
-    window.addEventListener('resize', resizeListener);
-
-    return () => {
-      window.removeEventListener('resize', resizeListener);
-    };
-  }, []);
-
   // get value based on multiple or single selection
   const getVal = (data: ISelectedOption<IOption>[]) => {
     return (multiple ? data : data?.[0]) as any;
@@ -328,8 +306,6 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
     selectContainerRef.current?.focus();
     inputRef.current?.focus();
   };
-
-  const [w, setW] = useState(4);
 
   useEffect(() => {
     setW(Math.max(4, hiddenTextRef.current?.clientWidth || 0));
@@ -396,16 +372,8 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
     if (!show) {
       setInputText('');
     }
-    setInputBounding(getPosition(selectContainerRef.current as HTMLDivElement));
     onOpenChange?.(show);
   }, [show]);
-
-  // set the bounding rect of menu
-  useEffect(() => {
-    if (selectContainerRef && selectContainerRef.current) {
-      setInputBounding(getPosition(selectContainerRef.current));
-    }
-  }, [inputText, w, selectedOption]);
 
   // typeahead feature
   const { selectedIndex } = useTypehead({
@@ -705,7 +673,7 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
         {selectedOption.length > 0 ? null : typeof placeholder === 'string' ? (
           <div
             className={cn(
-              'zener-text-black/20 zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
+              'zener-text-black/20 zener-select-none zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
               placeholder && !inputText && selectedOption.length === 0
                 ? 'zener-opacity-100'
                 : 'zener-opacity-0',
@@ -854,7 +822,7 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
       {/* Popup list section */}
       <VirtualList
         loading={loading}
-        bounds={inputBounding}
+        bounds={bounds}
         noOptionMessage={noOptionMessage}
         createLabel={createLabel}
         animation={animation}

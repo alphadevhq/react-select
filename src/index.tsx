@@ -574,7 +574,6 @@ const Icons = () => {
       }}
       options={country}
       placeholder="clearable"
-      open
       valueRender={(value) => {
         return (
           <div className="zener-flex zener-flex-row zener-items-center zener-gap-1">

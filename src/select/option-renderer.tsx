@@ -121,7 +121,7 @@ const OptionRenderer = forwardRef(
       >
         {(group && groupRender?.({ label: group || '' })) ||
           (group && (
-            <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2">
+            <div className="zener-text-xs zener-text-black/50 zener-py-2 zener-px-2 zener-select-none zener-cursor-default">
               {group}
             </div>
           ))}
@@ -130,14 +130,13 @@ const OptionRenderer = forwardRef(
             ref={ref}
             tabIndex={-1}
             className={cn(
-              'zener-select zener-select-option zener-outline-none zener-select-none zener-py-2 zener-rounded-md zener-border-solid zener-border-0 zener-border-y zener-border-y-white zener-truncate',
+              'zener-cursor-default zener-select zener-select-option zener-outline-none zener-select-none zener-py-2 zener-rounded-md zener-border-solid zener-border-0 zener-border-y zener-border-y-white zener-truncate',
               {
                 'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
                 'zener-mx-[5px]': true,
                 'zener-text-gray-400': !!disabled,
                 'zener-pr-2 zener-pl-5': groupMode,
                 'zener-px-2': !groupMode,
-                'zener-cursor-pointer': focused && !disabled,
                 'zener-bg-gray-400/10': focused && !active && !disabled,
               },
             )}

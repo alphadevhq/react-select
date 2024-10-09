@@ -5,14 +5,12 @@ const CloseIcon = ({ size = 16 }: ICloseIcon) => {
   return (
     <svg
       className="zener-outline-none"
-      tabIndex={-1}
       focusable="false"
       data-icon="close"
       width={size}
       height={size}
       strokeWidth="2"
       fill="currentColor"
-      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 32 32"
     >

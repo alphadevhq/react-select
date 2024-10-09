@@ -73,10 +73,6 @@
   top: 50%;
 }
 
-.zener-z-10 {
-  z-index: 10;
-}
-
 .zener-z-\[9999999999999999999\] {
   z-index: 9999999999999999999;
 }
@@ -314,6 +310,10 @@
 
 .zener-overflow-y-auto {
   overflow-y: auto;
+}
+
+.zener-overscroll-y-none {
+  overscroll-behavior-y: none;
 }
 
 .zener-truncate {

@@ -21,6 +21,7 @@ import useActiveIndex from './use-active-index';
 import { IGroupRender, IMenuItemRender, ISelectedOption } from './select';
 import { IOption } from './option';
 import Loading from './loading';
+import { IBounds } from './use-bounds';
 
 const creatableSignatureLabel = '47ea1738-6a8e-4d87-88c1-f19e291d604e';
 const creatableSignatureValue = '92a73c38-81c0-42e0-8182-8f9b006d7dc6';
@@ -46,7 +47,7 @@ type IListMenu = {
   groupRender?: (value: IGroupRender) => ReactNode;
   noOptionMessage?: ReactNode;
   loading: boolean;
-  bounds: { left: number; top: number; height: number; width: number };
+  bounds: IBounds;
   onWheel?: WheelEventHandler<HTMLDivElement>;
   onScroll?: UIEventHandler<HTMLDivElement>;
   onTouchMove?: TouchEventHandler<HTMLDivElement>;
@@ -103,7 +104,7 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
     const [isScrolling, setIsScrolling] = useState(false);
 
     useLayoutEffect(() => {
-      if (!show || !refProp) return;
+      if (!show || !refProp) return () => {};
 
       // make sure that when opening the menu the list is scrolled to first selected item if available.
       let currentActiveIndex = 0;
@@ -151,7 +152,7 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
             <motion.div
               tabIndex={-1}
               className={cn(
-                'react-select-dialog zener-overflow-y-auto',
+                'react-select-dialog zener-overflow-y-auto zener-overscroll-y-none',
                 menuClass ||
                   'zener-bg-white zener-rounded-md zener-shadow-menu zener-py-1',
               )}
@@ -180,9 +181,12 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
                 onScroll={() => {
                   setIsScrolling(true);
                   // needed to override pointerevents otherwise it is not letting click on item when scrolling
-                  if (dialogRef.current && dialogRef.current.firstChild) {
-                    //@ts-ignore
-                    dialogRef.current.firstChild.style.pointerEvents = 'auto';
+                  if (dialogRef.current) {
+                    const virtuaDiv = dialogRef.current
+                      .firstChild as HTMLDivElement;
+                    if (virtuaDiv) {
+                      virtuaDiv.style.pointerEvents = 'auto';
+                    }
                   }
                 }}
                 onScrollEnd={() => {
