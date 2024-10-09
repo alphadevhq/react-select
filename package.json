@@ -5,7 +5,7 @@
   "version": "3.0.0",
   "description": "The React Select is a minimal select component for reactjs.",
   "private": false,
-  "types": "./dist/@types/index.d.ts",
+  "types": "./dist/index.d.ts",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "sideEffects": false,
@@ -16,11 +16,11 @@
     },
     ".": {
       "import": {
-        "types": "./dist/@types/index.d.ts",
+        "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./dist/@types/index.d.ts",
+        "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
     }
@@ -45,7 +45,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "npm run clean && npm run build:css && node build.js && npm run tsc",
+    "build": "npm run clean && npm run build:css && node build.mjs && npm run tsc",
     "pack": "npm run build && npm pack --pack-destination ./out",
     "clean": "rimraf dist",
     "dev:build": "npm run build",
@@ -53,12 +53,16 @@
     "build:css": "tailwindcss -i ./src/scss/build.scss -o ./src/css/index.scss",
     "release": "pnpm build && npm publish"
   },
-  "peerDependencies": {
+  "dependencies": {
     "@radix-ui/react-portal": "^1.1.1",
     "classnames": "^2.3.2",
     "framer-motion": "^10.16.4",
-    "react": "^18.2.0 || ^17.0.0 || ^16.0.0",
     "virtua": "^0.33.7"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^17.0.0 || ^16.0.0",
+    "@types/react": "^18.2.22",
+    "@types/react-dom": "^18.2.14"
   },
   "devDependencies": {
     "@radix-ui/react-dialog": "^1.1.1",
@@ -85,7 +89,10 @@
     "react-scripts": "^5.0.1",
     "rimraf": "^5.0.1",
     "tailwindcss": "^3.3.3",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "glob": "^11.0.0",
+
+    "tsup": "^8.3.0"
   },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
@@ -98,6 +105,5 @@
   "bugs": {
     "url": "https://github.com/opensource-hq/react-select/issues"
   },
-  "homepage": "https://react-select.ojhabikash.com.np/",
-  "dependencies": {}
+  "homepage": "https://react-select.ojhabikash.com.np/"
 }
