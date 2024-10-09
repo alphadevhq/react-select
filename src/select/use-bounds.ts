@@ -56,6 +56,7 @@ const useBounds = (inputRef: RefObject<HTMLDivElement>, deps: any[]) => {
     }
     let int = 0;
     if (deps.some((e) => !!e)) {
+      // this only triggers if previous bounds is not equal to new bounds.
       int = setInterval(() => {
         const b = getPosition(inputRef.current as HTMLDivElement);
         if (JSON.stringify(b) !== JSON.stringify(boundRef.current)) {
