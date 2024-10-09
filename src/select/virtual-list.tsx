@@ -6,6 +6,7 @@ import {
   WheelEventHandler,
   forwardRef,
   useLayoutEffect,
+  useState,
 } from 'react';
 import { Portal } from '@radix-ui/react-portal';
 import { AnimatePresence, AnimationProps, motion } from 'framer-motion';
@@ -99,6 +100,8 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
 
     const { setActiveIndex } = useActiveIndex();
 
+    const [isScrolling, setIsScrolling] = useState(false);
+
     useLayoutEffect(() => {
       if (!show || !refProp) return;
 
@@ -113,7 +116,7 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
 
       setActiveIndex(currentActiveIndex);
 
-      setTimeout(() => {
+      const to = setTimeout(() => {
         if (refProp) {
           // @ts-ignore
           refProp.current?.scrollToIndex(currentActiveIndex || 0, {
@@ -121,6 +124,9 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
           });
         }
       }, 0);
+      return () => {
+        clearTimeout(to);
+      };
     }, [show, refProp]);
 
     return (
@@ -171,6 +177,17 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
                 overscan={10 /* overscan for keyboard */}
                 ref={refProp}
                 item={ItemWrapper}
+                onScroll={() => {
+                  setIsScrolling(true);
+                  // needed to override pointerevents otherwise it is not letting click on item when scrolling
+                  if (dialogRef.current && dialogRef.current.firstChild) {
+                    //@ts-ignore
+                    dialogRef.current.firstChild.style.pointerEvents = 'auto';
+                  }
+                }}
+                onScrollEnd={() => {
+                  setIsScrolling(false);
+                }}
               >
                 {options.map((option, index) => {
                   const data = option;
@@ -179,6 +196,8 @@ const VirtualList = forwardRef<VirtualizerHandle, IListMenu>(
                   return (
                     <OptionRenderer
                       key={value}
+                      dialogRef={dialogRef}
+                      isScrolling={isScrolling}
                       disabled={disabled}
                       groupMode={!!groupMode}
                       group={group}

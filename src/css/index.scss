@@ -106,11 +106,6 @@
   margin-right: 5px;
 }
 
-.zener-my-\[1px\] {
-  margin-top: 1px;
-  margin-bottom: 1px;
-}
-
 .-zener-ml-1 {
   margin-left: -0.25rem;
 }
@@ -252,12 +247,21 @@
           animation: zener-spin 1s linear infinite;
 }
 
+.zener-cursor-default {
+  cursor: default;
+}
+
 .zener-cursor-pointer {
   cursor: pointer;
 }
 
 .zener-cursor-text {
   cursor: text;
+}
+
+.zener-select-none {
+  -webkit-user-select: none;
+          user-select: none;
 }
 
 .zener-flex-row {
@@ -346,8 +350,9 @@
   border-width: 0px;
 }
 
-.zener-border-t {
+.zener-border-y {
   border-top-width: 1px;
+  border-bottom-width: 1px;
 }
 
 .zener-border-solid {
@@ -374,9 +379,10 @@
   border-color: rgb(231 229 228 / var(--tw-border-opacity));
 }
 
-.zener-border-t-white {
+.zener-border-y-white {
   --tw-border-opacity: 1;
   border-top-color: rgb(255 255 255 / var(--tw-border-opacity));
+  border-bottom-color: rgb(255 255 255 / var(--tw-border-opacity));
 }
 
 .zener-bg-\[\#E3E3E3\] {

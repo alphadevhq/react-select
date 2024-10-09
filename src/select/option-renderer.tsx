@@ -1,5 +1,12 @@
 /* eslint-disable no-nested-ternary */
-import { FocusEvent, ReactNode, forwardRef } from 'react';
+import {
+  FocusEvent,
+  ReactNode,
+  RefObject,
+  forwardRef,
+  useEffect,
+  useRef,
+} from 'react';
 import { cn } from './utils';
 import useActiveIndex from './use-active-index';
 
@@ -53,6 +60,8 @@ interface IOptionRenderer {
   groupRender?: ({ label }: { label: string }) => ReactNode;
   disabled?: boolean;
   index: number;
+  isScrolling: boolean;
+  dialogRef: RefObject<HTMLDivElement>;
 }
 
 const OptionRenderer = forwardRef(
@@ -70,18 +79,40 @@ const OptionRenderer = forwardRef(
       groupRender,
       disabled,
       index,
+      isScrolling,
+      dialogRef,
     }: IOptionRenderer,
     ref: any,
   ) => {
     const { activeIndex, setActiveIndex } = useActiveIndex();
     const focused = activeIndex === index;
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const onHover = () => {
+      if (isScrolling) {
+        return;
+      }
       setActiveIndex(index);
     };
 
+    useEffect(() => {
+      // after stop scrolling item which has mouseover should be focused
+      if (!isScrolling && dialogRef.current) {
+        const currentHoverItem = Array.from(
+          dialogRef.current.querySelectorAll(':hover'),
+        ).find((e) => e.classList.contains('zener-select-option-container'));
+        if (
+          currentHoverItem &&
+          currentHoverItem.contains(containerRef.current)
+        ) {
+          onHover();
+        }
+      }
+    }, [isScrolling, containerRef.current, dialogRef.current]);
+
     return (
       <div
+        ref={containerRef}
         tabIndex={-1}
         data-value={value}
         data-active={active}
@@ -96,16 +127,18 @@ const OptionRenderer = forwardRef(
           ))}
         {!ItemRender && (
           <div
+            ref={ref}
             tabIndex={-1}
             className={cn(
-              'zener-select zener-select-option zener-outline-none zener-cursor-pointer zener-py-2 zener-rounded-md zener-border-t zener-border-t-white zener-truncate',
+              'zener-select zener-select-option zener-outline-none zener-select-none zener-py-2 zener-rounded-md zener-border-solid zener-border-0 zener-border-y zener-border-y-white zener-truncate',
               {
                 'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
-                'zener-mx-[5px] zener-my-[1px]': true,
+                'zener-mx-[5px]': true,
                 'zener-text-gray-400': !!disabled,
                 'zener-pr-2 zener-pl-5': groupMode,
                 'zener-px-2': !groupMode,
-                'zener-bg-gray-400/10': focused && !active,
+                'zener-cursor-pointer': focused && !disabled,
+                'zener-bg-gray-400/10': focused && !active && !disabled,
               },
             )}
             onClick={() => {
