@@ -530,7 +530,7 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
         className && typeof className === 'function'
           ? `${isDisabled ? className().disabled : className().default}`
           : className ||
-              `${!isDisabled ? 'focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400' : ''} zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none`,
+              `${!isDisabled ? 'focus:zener-ring-1 focus:zener-ring-blue-400 focus-within:zener-ring-1 focus-within:zener-ring-blue-400' : ''} zener-font-sans zener-bg-white zener-text-sm zener-px-2 zener-py-0.5 zener-border-solid zener-border zener-border-stone-200 zener-rounded zener-min-w-[50px] zener-outline-none zener-text-black`,
       )}
       onClick={(e) => {
         if (isDisabled) {
@@ -612,7 +612,7 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
       <div
         className={cn(
           'zener-flex-1 zener-overflow-hidden zener-relative',
-          'zener-flex zener-flex-row zener-items-center zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px] zener-h-full zener-text-black',
+          'zener-flex zener-flex-row zener-items-center zener-gap-0.5 zener-mx-0.5 zener-min-h-[24px] zener-h-full',
           {
             'zener-flex-wrap': multiple,
             'zener-flex-1': !multiple,
@@ -670,21 +670,10 @@ const SelectComponent = <T, U extends boolean | undefined = undefined>({
 
         {/* Placeholder */}
 
-        {selectedOption.length > 0 ? null : typeof placeholder === 'string' ? (
+        {selectedOption.length > 0 ? null : (
           <div
             className={cn(
-              'zener-text-black/20 zener-select-none zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
-              placeholder && !inputText && selectedOption.length === 0
-                ? 'zener-opacity-100'
-                : 'zener-opacity-0',
-            )}
-          >
-            {placeholder}
-          </div>
-        ) : (
-          <div
-            className={cn(
-              'zener-absolute zener-left-0 zener-select-none zener-transition-all zener-flex zener-items-center zener-min-h-[24px]',
+              'zener-select-none zener-absolute zener-left-0 zener-transition-all zener-flex zener-items-center zener-min-h-[24px] zener-text-black/20',
               placeholder && !inputText && selectedOption.length === 0
                 ? 'zener-opacity-100'
                 : 'zener-opacity-0',
