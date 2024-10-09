@@ -58,11 +58,14 @@ interface IOptionRenderer {
     groupMode,
   }: IOptionItem) => ReactNode;
   groupRender?: ({ label }: { label: string }) => ReactNode;
-  disabled?: boolean;
+  disabled?: () => boolean | boolean;
   index: number;
   isScrolling: boolean;
   dialogRef: RefObject<HTMLDivElement>;
 }
+
+const cDisabled = (disabled: (() => boolean) | boolean | undefined) =>
+  typeof disabled === 'function' ? !!disabled?.() : !!disabled;
 
 const OptionRenderer = forwardRef(
   (
@@ -89,7 +92,7 @@ const OptionRenderer = forwardRef(
     const containerRef = useRef<HTMLDivElement>(null);
 
     const onHover = () => {
-      if (isScrolling) {
+      if (isScrolling || cDisabled(disabled)) {
         return;
       }
       setActiveIndex(index);
@@ -116,7 +119,7 @@ const OptionRenderer = forwardRef(
         tabIndex={-1}
         data-value={value}
         data-active={active}
-        data-disabled={disabled}
+        data-disabled={cDisabled(disabled)}
         data-type={typeof value}
       >
         {(group && groupRender?.({ label: group || '' })) ||
@@ -134,14 +137,15 @@ const OptionRenderer = forwardRef(
               {
                 'zener-text-black zener-bg-[#E3E3E3] zener-font-bold': active,
                 'zener-mx-[5px]': true,
-                'zener-text-gray-400': !!disabled,
+                'zener-text-gray-400': !!cDisabled(disabled),
                 'zener-pr-2 zener-pl-5': groupMode,
                 'zener-px-2': !groupMode,
-                'zener-bg-gray-400/10': focused && !active && !disabled,
+                'zener-bg-gray-400/10':
+                  focused && !active && !cDisabled(disabled),
               },
             )}
             onClick={() => {
-              if (!disabled) {
+              if (!cDisabled(disabled)) {
                 onClick?.();
               }
             }}
@@ -149,7 +153,12 @@ const OptionRenderer = forwardRef(
             onMouseMove={onHover}
             onMouseEnter={onHover}
           >
-            {render?.({ active, focused, disabled, groupMode })}
+            {render?.({
+              active,
+              focused,
+              disabled: cDisabled(disabled),
+              groupMode,
+            })}
           </div>
         )}
         {ItemRender && (
@@ -160,11 +169,11 @@ const OptionRenderer = forwardRef(
               label,
               value,
               focused,
-              disabled,
+              disabled: !!cDisabled(disabled),
               groupMode,
               innerProps: {
                 onClick: () => {
-                  if (!disabled) {
+                  if (!cDisabled(disabled)) {
                     onClick?.();
                   }
                 },

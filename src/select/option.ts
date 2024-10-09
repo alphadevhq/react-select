@@ -6,7 +6,7 @@ import { ReactNode } from 'react';
 export interface IOption {
   label: string;
   value: string;
-  disabled?: boolean;
+  disabled?: () => boolean | boolean;
   render?: ({
     active,
     focused,
